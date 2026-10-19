@@ -1,0 +1,14 @@
+{
+  "name": "sidequest",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "users": "node scripts/setup.mjs users",
+    "dev": "npx --yes serve app -l 5173"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "pg": "^8.12.0"
+  }
+}
