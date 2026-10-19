@@ -316,7 +316,10 @@ svg{flex-shrink:0;}
 /* app additions */
 .mnav{display:flex;align-items:center;gap:2px;}
 .mnav .icon-btn{width:30px;height:30px;}
-.me-btn{width:34px;height:34px;border-radius:50%;background:var(--ink-3);color:var(--paper);font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-left:8px;}
+.me-btn{width:34px;height:34px;border-radius:50%;background:var(--ink-3);color:var(--paper);font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+/* the University switch shows only its icon so the profile button fits; its state is clear from the colour and the city pill */
+.mode{padding:7px 9px;}
+.mode .mtxt{display:none;}
 .login{position:absolute;inset:0;z-index:2000;background:var(--ink);display:flex;flex-direction:column;justify-content:center;gap:14px;padding:28px 24px calc(28px + env(safe-area-inset-bottom,0px));}
 .login .logo{font-size:30px;}
 .login .logo svg{width:32px;height:32px;}
@@ -336,7 +339,7 @@ svg{flex-shrink:0;}
     </div>
     <span class="city" id="city"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>TAIPEI</span>
     <span class="spacer"></span>
-    <button class="mode" id="mode-btn" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5M22 9v6"/></svg>University</button>
+    <button class="mode" id="mode-btn" aria-pressed="false" aria-label="University mode" title="University mode"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5M22 9v6"/></svg><span class="mtxt">University</span></button>
     <button class="me-btn" id="me-btn" data-me aria-label="Profile"></button>
   </header>
 

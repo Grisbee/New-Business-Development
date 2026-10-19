@@ -83,6 +83,12 @@ begin
 end $$;
 create trigger messages_username before insert on messages for each row execute function set_username();
 
+-- explicit grants, in case the project was created with "Automatically expose new tables" off; RLS below still decides per row
+grant usage on schema public to authenticated;
+grant select on profiles to authenticated;
+grant select, insert, delete on events, attendance, follows to authenticated;
+grant select, insert on messages, uni_items to authenticated;
+
 alter table profiles enable row level security;
 alter table events enable row level security;
 alter table attendance enable row level security;
