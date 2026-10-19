@@ -49,7 +49,6 @@ svg{flex-shrink:0;}
 .topbar{display:flex;align-items:center;gap:10px;padding:18px 18px 12px;flex-shrink:0;}
 .logo{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:-.01em;display:flex;align-items:center;gap:7px;}
 .logo svg{color:var(--accent);}
-.city{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--paper-dim);background:var(--ink-3);padding:4px 9px;border-radius:999px;display:flex;align-items:center;gap:4px;}
 .spacer{flex:1;}
 .mode{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:700;color:var(--paper-dim);}
 .mode[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
@@ -317,9 +316,6 @@ svg{flex-shrink:0;}
 .mnav{display:flex;align-items:center;gap:2px;}
 .mnav .icon-btn{width:30px;height:30px;}
 .me-btn{width:34px;height:34px;border-radius:50%;background:var(--ink-3);color:var(--paper);font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;}
-/* the University switch shows only its icon so the profile button fits; its state is clear from the colour and the city pill */
-.mode{padding:7px 9px;}
-.mode .mtxt{display:none;}
 .login{position:absolute;inset:0;z-index:2000;background:var(--ink);display:flex;flex-direction:column;justify-content:center;gap:14px;padding:28px 24px calc(28px + env(safe-area-inset-bottom,0px));}
 .login .logo{font-size:30px;}
 .login .logo svg{width:32px;height:32px;}
@@ -337,9 +333,8 @@ svg{flex-shrink:0;}
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M12 2 22 12 12 22 2 12z"/><path d="M12 7.5v5.5"/><circle cx="12" cy="16.3" r=".6" fill="currentColor"/></svg>
       SideQuest
     </div>
-    <span class="city" id="city"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>TAIPEI</span>
     <span class="spacer"></span>
-    <button class="mode" id="mode-btn" aria-pressed="false" aria-label="University mode" title="University mode"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5M22 9v6"/></svg><span class="mtxt">University</span></button>
+    <button class="mode" id="mode-btn" aria-pressed="false" aria-label="Academic mode"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9 12 4 2 9l10 5 10-5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5M22 9v6"/></svg>ACADEMIC</button>
     <button class="me-btn" id="me-btn" data-me aria-label="Profile"></button>
   </header>
 

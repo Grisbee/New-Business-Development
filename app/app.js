@@ -764,7 +764,6 @@ async function saveSheet(){
 function setMode(uni){
   state.uni=uni;
   document.getElementById('mode-btn').setAttribute('aria-pressed',String(uni));
-  document.getElementById('city').lastChild.textContent=uni?'NTUST':'TAIPEI';
   if(state.chat)closeChat();
   if(state.detail)closeDetail();
   closeSheet();
@@ -830,7 +829,7 @@ chat.addEventListener('change',async e=>{
 document.getElementById('screen').addEventListener('keydown',e=>{
   if((e.key==='Enter'||e.key===' ')&&e.target.matches('span[data-follow]')){e.preventDefault();e.stopPropagation();toggleFollow(e.target.dataset.follow);}
 });
-document.getElementById('mode-btn').addEventListener('click',()=>{setMode(!state.uni);toast(state.uni?'University mode':'City mode');});
+document.getElementById('mode-btn').addEventListener('click',()=>{setMode(!state.uni);toast(state.uni?'Academic mode':'City mode');});
 view.addEventListener('change',e=>{
   const key=e.target.dataset.range;if(!key)return;
   const r=state.range[key]||{from:'',to:''};
