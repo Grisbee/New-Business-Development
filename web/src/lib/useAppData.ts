@@ -6,7 +6,7 @@ import { addDays, nextOccurrence, todayIso } from "@/lib/format";
 import type { ChatSummary, EventRow, GoingRow, Profile, Team, Thread, UniItem } from "@/lib/types";
 
 export const EVENT_SELECT =
-  "id, kind, thread_id, host_id, title, tag, starts_on, starts_at, place, description, price, tickets, max_going, image, going_count, repeat, repeat_until, host:profiles!events_host_id_fkey(id, username, display_name, color, tag, venue_name, role)";
+  "id, kind, thread_id, host_id, title, tag, starts_on, starts_at, place, description, price, tickets, max_going, image, going_count, repeat, repeat_until, join_mode, host:profiles!events_host_id_fkey(id, username, display_name, color, tag, venue_name, role)";
 
 // Everything the main screens show, loaded once and refreshed after writes
 // and on realtime changes. Small app, so whole lists are fine.
@@ -18,6 +18,8 @@ export function useAppData(me: Profile) {
   const [chats, setChats] = useState<Map<string, ChatSummary>>(new Map());
   const [teams, setTeams] = useState<Team[]>([]);
   const [items, setItems] = useState<UniItem[]>([]);
+  // Open join requests on events I host: event id → how many.
+  const [requests, setRequests] = useState<Map<string, number>>(new Map());
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +46,18 @@ export function useAppData(me: Profile) {
       .eq("user_id", me.id);
     if (error) return setError(error.message);
     setGoing(new Map((data ?? []).map((g) => [g.event_id, g as GoingRow])));
+  }, [supabase, me.id]);
+
+  const loadRequests = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("going")
+      .select("event_id, event:events!inner(host_id)")
+      .eq("status", "requested")
+      .eq("event.host_id", me.id);
+    if (error) return setError(error.message);
+    const m = new Map<string, number>();
+    (data ?? []).forEach((r) => m.set(r.event_id, (m.get(r.event_id) ?? 0) + 1));
+    setRequests(m);
   }, [supabase, me.id]);
 
   const loadThreads = useCallback(async () => {
@@ -86,9 +100,9 @@ export function useAppData(me: Profile) {
   }, [supabase]);
 
   const reloadAll = useCallback(async () => {
-    await Promise.all([loadEvents(), loadGoing(), loadThreads(), loadChats(), loadTeams()]);
+    await Promise.all([loadEvents(), loadGoing(), loadThreads(), loadChats(), loadTeams(), loadRequests()]);
     setLoaded(true);
-  }, [loadEvents, loadGoing, loadThreads, loadChats, loadTeams]);
+  }, [loadEvents, loadGoing, loadThreads, loadChats, loadTeams, loadRequests]);
 
   useEffect(() => {
     // Initial load; the setState calls happen after the awaits.
@@ -108,14 +122,14 @@ export function useAppData(me: Profile) {
       .channel("app")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => schedule(() => void loadChats()))
       .on("postgres_changes", { event: "*", schema: "public", table: "going" }, () =>
-        schedule(() => void Promise.all([loadEvents(), loadGoing(), loadChats()])),
+        schedule(() => void Promise.all([loadEvents(), loadGoing(), loadChats(), loadRequests()])),
       )
       .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => schedule(() => void loadEvents()))
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [supabase, loadChats, loadEvents, loadGoing]);
+  }, [supabase, loadChats, loadEvents, loadGoing, loadRequests]);
 
   return {
     supabase,
@@ -125,6 +139,8 @@ export function useAppData(me: Profile) {
     chats,
     teams,
     items,
+    requests,
+    loadRequests,
     loaded,
     error,
     loadEvents,

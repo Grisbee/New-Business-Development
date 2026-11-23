@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Ic } from "@/components/Icons";
 import { useAppData, type AppData } from "@/lib/useAppData";
+import { createClient } from "@/lib/supabase/client";
 import { initials, todayIso } from "@/lib/format";
 import type { ChatRef, EventRow, Profile } from "@/lib/types";
 import { PublicView, CommunityView, ThreadsView, MineView } from "@/components/views/Lists";
@@ -34,7 +35,7 @@ export type UiState = {
   q: Record<ListKey, string>;
   range: Record<"public" | "community", { from: string; to: string } | null>;
   threadSeg: "mine" | "explore";
-  mineFilter: "all" | "public" | "community";
+  mineFilter: "joined" | "hosting";
   calDay: string;
   uniDay: string;
 };
@@ -75,7 +76,7 @@ export function AppShell({ me }: { me: Profile }) {
     q: { public: "", community: "", threads: "" },
     range: { public: null, community: null },
     threadSeg: "mine",
-    mineFilter: "all",
+    mineFilter: "joined",
     calDay: today,
     uniDay: today,
   });
@@ -172,13 +173,21 @@ export function AppShell({ me }: { me: Profile }) {
       // Like Sidequest: a little nudge to only join when you'll really come.
       const yes = await confirm(
         mine
-          ? mine.status === "waitlist"
+          ? mine.status === "requested"
+            ? { title: "Cancel your request?", body: `The host of “${e.title}” won’t see it any more.`, ok: "Cancel request", danger: true }
+            : mine.status === "waitlist"
             ? { title: "Leave the waitlist?", body: `You’ll lose your place in line for “${e.title}”.`, ok: "Leave waitlist", danger: true }
             : {
                 title: "Leave this event?",
                 body: `You’ll leave the group chat, and your spot goes to the next person on the waitlist.${series} We’ll miss you 👋`,
                 ok: "Leave event",
                 danger: true,
+              }
+          : e.join_mode === "approval"
+            ? {
+                title: "Ask to join?",
+                body: `The host picks who comes to “${e.title}”. If they say yes, you’re in and get the group chat. Only ask if you’re planning to show up 🙏${series}`,
+                ok: "Send request",
               }
           : isFull(e)
             ? {
@@ -196,11 +205,17 @@ export function AppShell({ me }: { me: Profile }) {
       if (mine) {
         const { error } = await data.supabase.from("going").delete().eq("event_id", e.id).eq("user_id", me.id);
         if (error) return toast(`Couldn’t leave: ${error.message}`);
-        toast(mine.status === "waitlist" ? "You left the waitlist" : "You left this event");
+        toast(mine.status === "requested" ? "Request cancelled" : mine.status === "waitlist" ? "You left the waitlist" : "You left this event");
       } else {
         const { data: row, error } = await data.supabase.from("going").insert({ event_id: e.id }).select("status").single();
         if (error) return toast(`Couldn’t join: ${error.message}`);
-        toast(row.status === "waitlist" ? "Added to the waitlist" : "You’re going · group chat is in My events");
+        toast(
+          row.status === "requested"
+            ? "Request sent · the host will answer"
+            : row.status === "waitlist"
+              ? "Added to the waitlist"
+              : "You’re going · group chat is in My events",
+        );
       }
       await Promise.all([data.loadGoing(), data.loadEvents(), data.loadChats()]);
     },
@@ -253,10 +268,10 @@ export function AppShell({ me }: { me: Profile }) {
       [...data.chats.values()].filter((c) => c.kind === kind && (!filter || filter(c.id))).reduce((a, c) => a + c.unread, 0);
     return {
       threads: sum("thread"),
-      mine: sum("event"),
+      mine: sum("event") + [...data.requests.values()].reduce((a, n) => a + n, 0),
       teams: sum("team"),
     } as Partial<Record<Tab, number>>;
-  }, [data.chats]);
+  }, [data.chats, data.requests]);
 
   const isVenue = me.role === "venue" || me.role === "admin";
   // In the city the + opens a small menu; the editors are separate pages, so
@@ -324,11 +339,7 @@ export function AppShell({ me }: { me: Profile }) {
             University
           </button>
           <ThemeButton />
-          <Link href="/me" className="icon-btn" aria-label="Your profile" title={me.display_name ?? me.username ?? "Profile"}>
-            <span className="avatar" style={{ background: me.color, width: 28, height: 28 }}>
-              {initials(me.display_name ?? me.username)}
-            </span>
-          </Link>
+          <ProfileMenu me={me} />
         </header>
 
         <main className="view" id="view" ref={viewRef}>
@@ -450,5 +461,61 @@ function ThemeButton() {
         <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
       </svg>
     </button>
+  );
+}
+
+// The avatar in the top bar: a small menu with the profile and signing out.
+function ProfileMenu({ me }: { me: Profile }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  const items = [
+    { href: "/me", label: "Edit profile", icon: "pen" },
+    { href: "/venue", label: me.role === "user" ? "Become a venue" : "Venue", icon: "shield" },
+    ...(me.role === "admin" ? [{ href: "/admin", label: "Venue requests", icon: "flag" }] : []),
+  ];
+  return (
+    <div className="pmenu" ref={ref}>
+      <button className="icon-btn" aria-label="Your account" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <span className="avatar" style={{ background: me.color, width: 28, height: 28, boxShadow: open ? "0 0 0 2px var(--accent)" : undefined }}>
+          {initials(me.display_name ?? me.username)}
+        </span>
+      </button>
+      <div className={`pmenu-list${open ? " open" : ""}`} aria-hidden={!open}>
+        <div className="pmenu-name">
+          <b>{me.display_name ?? me.username}</b>
+          <span>@{me.username}</span>
+        </div>
+        {items.map((it) => (
+          <Link key={it.href} href={it.href} tabIndex={open ? 0 : -1} onClick={() => setOpen(false)}>
+            <Ic name={it.icon} size={16} />
+            {it.label}
+          </Link>
+        ))}
+        <button
+          tabIndex={open ? 0 : -1}
+          className="pmenu-out"
+          onClick={async () => {
+            await createClient().auth.signOut();
+            window.location.replace("/login");
+          }}
+        >
+          <Ic name="back" size={16} />
+          Log out
+        </button>
+      </div>
+    </div>
   );
 }

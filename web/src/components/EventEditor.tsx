@@ -29,6 +29,7 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
   const [tiers, setTiers] = useState<Ticket[]>([]);
   const [repeat, setRepeat] = useState<Repeat>("none");
   const [unlimited, setUnlimited] = useState(false);
+  const [approval, setApproval] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const defaultTag = pub ? TAGS.public[0] : tagForThread(thread?.tag);
@@ -72,6 +73,7 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
         tickets: pub ? cleanTiers : [],
         max_going: pub || unlimited ? null : Math.max(2, Number(val("max") || 8)),
         repeat: pub ? "none" : repeat,
+        join_mode: !pub && approval ? "approval" : "open",
         repeat_until: !pub && repeat !== "none" && val("until") ? val("until") : null,
         image,
       })
@@ -183,6 +185,20 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
               </div>
             )}
           </div>
+          {!pub && (
+            <div className="field">
+              Who can join
+              <div className="panel-chips">
+                <button type="button" className={`chip${!approval ? " active" : ""}`} aria-pressed={!approval} onClick={() => setApproval(false)}>
+                  Anyone
+                </button>
+                <button type="button" className={`chip${approval ? " active" : ""}`} aria-pressed={approval} onClick={() => setApproval(true)}>
+                  🔒 I approve requests
+                </button>
+              </div>
+              {approval && <span className="hint">People ask to join; you say yes or no from the event. Only approved people get the group chat.</span>}
+            </div>
+          )}
           {!pub && (
             <div className="field">
               Repeats

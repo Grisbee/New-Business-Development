@@ -480,3 +480,17 @@ html,body{overflow:hidden;height:100%;}
 .cal-legend{padding:0 6px 10px;flex-wrap:wrap;}
 .pin{font:inherit;font-weight:700;color:var(--accent);}
 button.logo{color:inherit;}
+.req-note{margin:-6px 0 6px 68px;font-size:12px;font-weight:700;color:var(--accent);}
+.chat-pill{display:inline-flex;align-items:center;gap:7px;position:relative;}
+.chat-pill .badge{position:absolute;top:-6px;right:-6px;}
+
+/* Account menu under the avatar */
+.pmenu{position:relative;}
+.pmenu-list{position:absolute;right:0;top:44px;z-index:30;width:210px;display:flex;flex-direction:column;padding:6px;border-radius:16px;background:var(--ink);border:1px solid var(--line);box-shadow:0 12px 32px var(--shadow);opacity:0;transform:translateY(-4px) scale(.97);transform-origin:top right;pointer-events:none;transition:opacity .16s ease,transform .16s ease;}
+.pmenu-list.open{opacity:1;transform:none;pointer-events:auto;}
+.pmenu-name{display:flex;flex-direction:column;padding:8px 10px 10px;border-bottom:1px solid var(--line);margin-bottom:4px;}
+.pmenu-name b{font-size:14px;}
+.pmenu-name span{font-size:12px;color:var(--paper-dim);}
+.pmenu-list a,.pmenu-list button{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;font-size:14px;font-weight:600;color:var(--paper);text-decoration:none;text-align:left;}
+.pmenu-list a:hover,.pmenu-list button:hover{background:var(--ink-2);}
+.pmenu-out{color:var(--deadline)!important;}

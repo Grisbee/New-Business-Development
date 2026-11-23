@@ -42,6 +42,8 @@ export type EventRow = {
   going_count: number;
   repeat: Repeat;
   repeat_until: string | null;
+  // "approval": people ask to join and the host says yes or no.
+  join_mode: "open" | "approval";
   // The next date it happens on (today or later), or the last one once a
   // series is over. Filled in on load; the lists use it instead of starts_on.
   next_on: string;
@@ -50,7 +52,7 @@ export type EventRow = {
 
 export type Repeat = "none" | "weekly" | "biweekly" | "monthly";
 
-export type GoingRow = { event_id: string; status: "going" | "waitlist"; tier: number | null; qty: number; created_at: string };
+export type GoingRow = { event_id: string; status: "going" | "waitlist" | "requested"; tier: number | null; qty: number; created_at: string };
 
 export type Thread = {
   id: string;

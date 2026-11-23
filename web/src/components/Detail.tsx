@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppShell";
-import { ChatButton } from "@/components/views/Lists";
 import { Ic } from "@/components/Icons";
 import { REPEAT_LABEL, goingText, fmtLong, fmtShort, imageUrl, initials, to12h } from "@/lib/format";
 import { nameOf, type PersonLite } from "@/lib/types";
@@ -70,7 +69,14 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     await data.loadEvents();
   }
 
-  const chatBtn = on ? <ChatButton e={e} size={46} /> : null;
+  const unread = data.chats.get(`event:${e.id}`)?.unread ?? 0;
+  const chatBtn = on ? (
+    <button className="btn lg chat-pill" onClick={() => openChat({ type: "event", id: e.id })}>
+      <Ic name="chat" size={18} />
+      Chat
+      {unread ? <span className="badge">{unread}</span> : null}
+    </button>
+  ) : null;
   let section: React.ReactNode = null;
   let bar: React.ReactNode = null;
 
@@ -214,6 +220,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     );
     const left = max === null ? "Unlimited" : max - count;
     const waiting = mine?.status === "waitlist";
+    const asked = mine?.status === "requested";
     bar = (
       <>
         <span className="total">
@@ -221,8 +228,20 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
           <b>{full ? "Waitlist open" : left}</b>
         </span>
         {chatBtn}
-        <button className={`btn lg ${on ? "on" : full || waiting ? "" : "primary"}`} onClick={() => void toggleJoin(e)}>
-          {e.host_id === me.id ? "You’re hosting" : on ? "✓ Going" : waiting ? "On waitlist · leave" : full ? "Join waitlist" : "Join"}
+        <button className={`btn lg ${on ? "on" : full || waiting || asked ? "" : "primary"}`} onClick={() => void toggleJoin(e)}>
+          {e.host_id === me.id
+            ? "You’re hosting"
+            : on
+              ? "✓ Going"
+              : asked
+                ? "Requested · cancel"
+                : waiting
+                  ? "On waitlist · leave"
+                  : e.join_mode === "approval"
+                    ? "Ask to join"
+                    : full
+                      ? "Join waitlist"
+                      : "Join"}
         </button>
       </>
     );
@@ -270,7 +289,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
         <div className="dbody">
           <div className="dhead">
             <span className="dtag">
-              {pub ? "Public event" : "Community event"} · {e.tag}
+              {pub ? "Public event" : e.join_mode === "approval" ? "Private community event" : "Community event"} · {e.tag}
             </span>
             <h2>{e.title}</h2>
           </div>
@@ -310,6 +329,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             )}
           </div>
           {e.description && <p>{e.description}</p>}
+          {e.host_id === me.id && e.join_mode === "approval" && <Requests eventId={e.id} />}
           {section}
           {(e.host_id === me.id || me.role === "admin") && (
             <button className="btn" style={{ alignSelf: "flex-start" }} onClick={() => void remove()}>
@@ -334,6 +354,63 @@ function Person({ p, host }: { p: { name: string; tag: string; color: string; ro
         {p.tag ? <small>{p.tag}</small> : null}
       </span>
       {host ? <span className="host-pill">Host</span> : null}
+    </div>
+  );
+}
+
+// The host's list of people asking to join, with yes / no.
+function Requests({ eventId }: { eventId: string }) {
+  const { data, toast } = useApp();
+  const [rows, setRows] = useState<{ user_id: string; person: PersonLite | null }[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const count = data.requests.get(eventId) ?? 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    void data.supabase
+      .from("going")
+      .select("user_id, person:profiles!going_user_id_fkey(id, username, display_name, color, tag, venue_name, role)")
+      .eq("event_id", eventId)
+      .eq("status", "requested")
+      .order("created_at")
+      .then(({ data: r }) => {
+        if (!cancelled) setRows((r ?? []) as unknown as typeof rows);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [data.supabase, eventId, count]);
+
+  async function answer(userId: string, approve: boolean) {
+    setBusy(userId);
+    const { data: status, error } = await data.supabase.rpc("answer_join_request", { p_event: eventId, p_user: userId, p_approve: approve });
+    setBusy(null);
+    if (error) return toast(error.message);
+    toast(!approve ? "Request declined" : status === "waitlist" ? "Approved · on the waitlist, the event is full" : "Approved · they’re in");
+    await Promise.all([data.loadRequests(), data.loadEvents()]);
+  }
+
+  return (
+    <div className="going-card">
+      <h4 className="going-title">Asking to join · {rows.length}</h4>
+      {rows.length === 0 && <div className="hint" style={{ paddingTop: 8 }}>No requests right now.</div>}
+      {rows.map((r) => (
+        <div key={r.user_id} className="person">
+          <span className="avatar" style={{ width: 36, height: 36, background: r.person?.color ?? "#8FC1E3" }}>
+            {initials(nameOf(r.person))}
+          </span>
+          <span className="n">
+            {nameOf(r.person)}
+            {r.person?.tag ? <small>{r.person.tag}</small> : null}
+          </span>
+          <button className="btn primary" disabled={busy === r.user_id} onClick={() => void answer(r.user_id, true)}>
+            Approve
+          </button>
+          <button className="btn" disabled={busy === r.user_id} onClick={() => void answer(r.user_id, false)}>
+            Decline
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

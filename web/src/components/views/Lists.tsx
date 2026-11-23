@@ -207,6 +207,18 @@ export function ActionButtons({ e, compact }: { e: EventRow; compact?: boolean }
         )}
       </>
     );
+  if (data.going.get(e.id)?.status === "requested")
+    return (
+      <button className="btn" onClick={stop(() => void toggleJoin(e))}>
+        Requested
+      </button>
+    );
+  if (e.join_mode === "approval")
+    return (
+      <button className="btn primary" onClick={stop(() => void toggleJoin(e))}>
+        Request
+      </button>
+    );
   if (data.going.get(e.id)?.status === "waitlist")
     return (
       <button className="btn" onClick={stop(() => void toggleJoin(e))}>
@@ -472,7 +484,9 @@ export function ThreadsView() {
 /* --------------------------------------------------------------- my events */
 
 export function MineView() {
-  const { data, ui, setUi, today, isGoing } = useApp();
+  const { data, ui, setUi, today, me } = useApp();
+  // "joined": events I'm going to, waiting for or asked to join.
+  // "hosting": events I created.
   const f = ui.mineFilter;
   const weekEnd = (() => {
     const t = parse(today);
@@ -480,65 +494,60 @@ export function MineView() {
     d.setDate(t.getDate() + ((7 - t.getDay()) % 7));
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   })();
-  const mine = upcoming(data.events, today)
-    .filter((e) => (isGoing(e.id) || data.going.get(e.id)?.status === "waitlist") && (f === "all" || e.kind === f))
-    .sort(byDate);
+  const hosting = upcoming(data.events, today).filter((e) => e.host_id === me.id);
+  const joined = upcoming(data.events, today).filter((e) => e.host_id !== me.id && data.going.has(e.id));
+  const mine = (f === "hosting" ? hosting : joined).sort(byDate);
   const week = mine.filter((e) => e.next_on <= weekEnd);
   const later = mine.filter((e) => e.next_on > weekEnd);
-  const empty = {
-    all: <>You haven’t joined any events yet.</>,
-    public: (
+  const requests = [...data.requests.values()].reduce((a, n) => a + n, 0);
+  const empty =
+    f === "hosting" ? (
       <>
-        No public events yet. Get tickets in the <b>Public</b> tab.
+        You’re not hosting anything yet.
+        <br />
+        Tap <b>+</b> to create an event.
       </>
-    ),
-    community: (
+    ) : (
       <>
-        No community events yet. Tap <b>Join</b> in the <b>Community</b> tab.
+        You haven’t joined any events yet.
+        <br />
+        Joined events and their group chats show up here.
       </>
-    ),
-  }[f];
+    );
+  const row = (e: EventRow) => (
+    <div key={e.id} style={{ display: "contents" }}>
+      <ERow e={e} />
+      {f === "hosting" && data.requests.get(e.id) ? <div className="req-note">{data.requests.get(e.id)} waiting for your answer</div> : null}
+    </div>
+  );
   return (
     <>
       <div className="tab-head">
         <h1>My events</h1>
       </div>
       <div className="seg">
-        {(
-          [
-            ["all", "All"],
-            ["public", "Public"],
-            ["community", "Community"],
-          ] as const
-        ).map(([k, l]) => (
-          <button key={k} className={f === k ? "active" : ""} onClick={() => setUi((u) => ({ ...u, mineFilter: k }))}>
-            {l}
-          </button>
-        ))}
+        <button className={f === "joined" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, mineFilter: "joined" }))}>
+          Joined{joined.length ? <span className="badge" style={{ background: "var(--ink-3)", color: "var(--paper)" }}>{joined.length}</span> : null}
+        </button>
+        <button className={f === "hosting" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, mineFilter: "hosting" }))}>
+          Hosted by me{requests ? <span className="badge">{requests}</span> : null}
+        </button>
       </div>
       <div className="list rows">
         {mine.length === 0 ? (
-          <div className="empty">
-            {empty}
-            <br />
-            Joined events and their group chats show up here.
-          </div>
+          <div className="empty">{empty}</div>
         ) : (
           <>
             {week.length > 0 && (
               <>
                 <div className="section-label">This week</div>
-                {week.map((e) => (
-                  <ERow key={e.id} e={e} />
-                ))}
+                {week.map(row)}
               </>
             )}
             {later.length > 0 && (
               <>
                 <div className="section-label">Later</div>
-                {later.map((e) => (
-                  <ERow key={e.id} e={e} />
-                ))}
+                {later.map(row)}
               </>
             )}
           </>
