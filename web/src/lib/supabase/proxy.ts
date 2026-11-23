@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Pages anyone can open; everything else needs an account.
-const PUBLIC_PATHS = ["/login", "/signup", "/verify", "/forgot"];
+const PUBLIC_PATHS = ["/login", "/signup", "/verify", "/forgot", "/auth"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

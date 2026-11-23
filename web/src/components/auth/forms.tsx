@@ -21,7 +21,9 @@ function useSubmit() {
 }
 
 export function LoginForm() {
+  const params = useSearchParams();
   const { error, busy, run } = useSubmit();
+  const linkError = params.get("error") === "link" ? "That link has expired or was already used. Sign in, or ask for a new one." : null;
   return (
     <form
       onSubmit={(e) => {
@@ -43,7 +45,7 @@ export function LoginForm() {
         Password
         <input name="password" type="password" required autoComplete="current-password" />
       </label>
-      {error && <p className="error">{error}</p>}
+      {(error ?? linkError) && <p className="error">{error ?? linkError}</p>}
       <button className="btn primary lg" disabled={busy}>
         {busy ? "Signing in…" : "Sign in"}
       </button>
@@ -69,7 +71,7 @@ export function SignupForm() {
         const password = String(f.get("password"));
         void run(async () => {
           if (password.length < 8) return "Use at least 8 characters for the password.";
-          const { error } = await createClient().auth.signUp({ email, password });
+          const { error } = await createClient().auth.signUp({ email, password, options: { emailRedirectTo: callback("/onboarding") } });
           if (error) return error.message;
           router.push(`/verify?email=${encodeURIComponent(email)}`);
         });
@@ -94,103 +96,105 @@ export function SignupForm() {
   );
 }
 
-// The code from the confirmation email (sign-up) or the reset email.
-export function VerifyForm({ mode }: { mode: "signup" | "recovery" }) {
+const callback = (next: string) => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+
+// After sign-up: the confirmation email has a link; this page says so and
+// can send it again.
+export function CheckEmail() {
   const params = useSearchParams();
-  const [email, setEmail] = useState(params.get("email") ?? "");
-  const [sent, setSent] = useState(mode === "signup");
-  const { error, busy, run, setError } = useSubmit();
+  const email = params.get("email") ?? "";
+  const { error, busy, run } = useSubmit();
   const [info, setInfo] = useState<string | null>(null);
-  const supabase = createClient();
-
-  if (mode === "recovery" && !sent) {
-    return (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void run(async () => {
-            const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
-            if (error) return error.message;
-            setSent(true);
-          });
-        }}
-      >
-        <label className="field">
-          Email
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
-        </label>
-        {error && <p className="error">{error}</p>}
-        <button className="btn primary lg" disabled={busy}>
-          Send a code
-        </button>
-        <p className="auth-sub">
-          <Link href="/login">Back to sign in</Link>
-        </p>
-      </form>
-    );
-  }
-
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        const f = new FormData(e.currentTarget);
-        const token = String(f.get("code")).replace(/\s/g, "");
-        void run(async () => {
-          const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token, type: mode });
-          if (error) return error.message;
-          if (mode === "recovery") {
-            const password = String(f.get("password"));
-            if (password.length < 8) return "Use at least 8 characters for the password.";
-            const { error: pwError } = await supabase.auth.updateUser({ password });
-            if (pwError) return pwError.message;
-          }
-          window.location.replace(mode === "signup" ? "/onboarding" : "/");
-        });
-      }}
-    >
+    <>
       <p className="auth-sub">
-        We sent a code to <b>{email || "your email"}</b>. It can take a minute; check spam too.
+        We sent a link to <b>{email || "your email"}</b>. Open it on this device to confirm your account. It can take a minute; check spam too.
       </p>
-      {!params.get("email") && (
-        <label className="field">
-          Email
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </label>
-      )}
-      <label className="field">
-        Code
-        <input name="code" required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]{6,10}" maxLength={10} />
-      </label>
-      {mode === "recovery" && (
-        <label className="field">
-          New password
-          <input name="password" type="password" required minLength={8} autoComplete="new-password" />
-        </label>
-      )}
       {error && <p className="error">{error}</p>}
       {info && <p className="ok">{info}</p>}
-      <button className="btn primary lg" disabled={busy}>
-        {mode === "signup" ? "Confirm" : "Set new password"}
-      </button>
       <button
         type="button"
-        className="btn"
+        className="btn lg"
         disabled={busy || !email}
         onClick={() =>
           void run(async () => {
             setInfo(null);
-            const { error } =
-              mode === "signup"
-                ? await supabase.auth.resend({ type: "signup", email: email.trim() })
-                : await supabase.auth.resetPasswordForEmail(email.trim());
+            const { error } = await createClient().auth.resend({ type: "signup", email, options: { emailRedirectTo: callback("/onboarding") } });
             if (error) return error.message;
-            setError(null);
-            setInfo("Sent a new code.");
+            setInfo("Sent it again.");
           })
         }
       >
-        Send the code again
+        Send the link again
+      </button>
+      <p className="auth-sub">
+        <Link href="/login">Back to sign in</Link>
+      </p>
+    </>
+  );
+}
+
+export function ForgotForm() {
+  const [sent, setSent] = useState(false);
+  const { error, busy, run } = useSubmit();
+  if (sent)
+    return (
+      <>
+        <p className="ok">If there’s an account with that email, a reset link is on its way. Open it on this device.</p>
+        <p className="auth-sub">
+          <Link href="/login">Back to sign in</Link>
+        </p>
+      </>
+    );
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const email = String(new FormData(e.currentTarget).get("email")).trim();
+        void run(async () => {
+          const { error } = await createClient().auth.resetPasswordForEmail(email, { redirectTo: callback("/reset") });
+          if (error) return error.message;
+          setSent(true);
+        });
+      }}
+    >
+      <label className="field">
+        Email
+        <input name="email" type="email" required autoComplete="email" />
+      </label>
+      {error && <p className="error">{error}</p>}
+      <button className="btn primary lg" disabled={busy}>
+        Send a reset link
+      </button>
+      <p className="auth-sub">
+        <Link href="/login">Back to sign in</Link>
+      </p>
+    </form>
+  );
+}
+
+export function NewPasswordForm() {
+  const { error, busy, run } = useSubmit();
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const password = String(new FormData(e.currentTarget).get("password"));
+        void run(async () => {
+          if (password.length < 8) return "Use at least 8 characters.";
+          const { error } = await createClient().auth.updateUser({ password });
+          if (error) return error.message;
+          window.location.replace("/");
+        });
+      }}
+    >
+      <label className="field">
+        New password
+        <input name="password" type="password" required minLength={8} autoComplete="new-password" />
+      </label>
+      {error && <p className="error">{error}</p>}
+      <button className="btn primary lg" disabled={busy}>
+        Save password
       </button>
     </form>
   );

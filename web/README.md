@@ -14,8 +14,10 @@ Next.js + Supabase (auth, Postgres with RLS, storage, realtime).
 
 ## Supabase settings (dashboard)
 
-- Authentication → Emails: use `{{ .Token }}` in the "Confirm signup" and
-  "Reset password" templates (`supabase/templates/`), so people get a code.
-- Authentication → URL configuration: the site URL (Vercel domain).
+- Authentication → URL Configuration: Site URL = the Vercel domain, and
+  Redirect URLs `https://<domain>/**` and `http://localhost:3001/**`. The
+  emails' links go to `/auth/callback`.
+- The default email templates work as they are (they carry the link).
+  `supabase/templates/` are branded versions for when custom SMTP is set up.
 - Custom SMTP (Resend or Gmail) before real users: the built-in sender only
   allows a few emails an hour.
