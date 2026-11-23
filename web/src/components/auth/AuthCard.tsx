@@ -4,7 +4,7 @@ import Link from "next/link";
 // with the logo, then a centred card.
 export function AuthCard({ title, sub, children, back }: { title: string; sub?: React.ReactNode; children: React.ReactNode; back?: string }) {
   return (
-    <div className="screen">
+    <div className="screen auth-screen">
       <header className="topbar">
         <Link href={back ?? "/"} className="logo" style={{ color: "inherit", textDecoration: "none" }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- small inline brand mark */}

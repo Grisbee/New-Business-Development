@@ -384,3 +384,8 @@ html,body{overflow:hidden;height:100%;}
 @media (min-width:1024px){
   .screen .detail:not(.open),.screen .chat:not(.open){box-shadow:none;}
 }
+/* Pages without the nav: no sidebar column on desktop, so the card is centred. */
+@media (min-width:1024px){
+  .screen.auth-screen{display:flex;}
+  .screen.auth-screen .view{padding-inline:16px;}
+}
