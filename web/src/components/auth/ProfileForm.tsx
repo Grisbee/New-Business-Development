@@ -20,7 +20,12 @@ export function ProfileForm({
   submitLabel: string;
   then: string;
 }) {
-  const [status, uni0] = (initial.tag ?? "").split(" · ");
+  const [status0] = (initial.tag ?? "").split(" · ");
+  const [status, setStatus] = useState(STATUSES.includes(status0) ? status0 : STATUSES[0]);
+  // A university not on the list is kept as typed, under "Other".
+  const known = UNIVERSITIES.includes(initial.university ?? "") ? initial.university! : null;
+  const [uni, setUni] = useState(known ?? (initial.university ? "Other" : "NTUST"));
+  const [otherUni, setOtherUni] = useState(known ? "" : (initial.university ?? ""));
   const [color, setColor] = useState(initial.color);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -29,13 +34,13 @@ export function ProfileForm({
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const username = String(f.get("username")).trim().toLowerCase();
-    const st = String(f.get("status"));
-    const uni = String(f.get("university"));
+    const university = uni === "Other" ? otherUni.trim() : uni;
     if (!/^[a-z0-9._]{3,20}$/.test(username)) return setError("3–20 characters: letters, numbers, dots and underscores.");
+    if (!university) return setError("Type your university’s name.");
     setBusy(true);
     const { error } = await createClient()
       .from("profiles")
-      .update({ username, tag: uni && uni !== "Other" ? `${st} · ${uni}` : st, university: uni || null, color })
+      .update({ username, tag: `${status} · ${university}`.slice(0, 40), university, color })
       .eq("id", userId)
       .select("id")
       .single();
@@ -50,24 +55,32 @@ export function ProfileForm({
         Username
         <input name="username" required defaultValue={initial.username ?? ""} maxLength={20} autoCapitalize="none" placeholder="e.g. marco.it" />
       </label>
-      <div className="row2">
-        <label className="field">
-          I’m a…
-          <select name="status" defaultValue={status || STATUSES[0]}>
-            {STATUSES.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          University
-          <select name="university" defaultValue={initial.university ?? uni0 ?? "NTUST"}>
-            {UNIVERSITIES.map((u) => (
-              <option key={u}>{u}</option>
-            ))}
-          </select>
-        </label>
+      <div className="field">
+        I’m a…
+        <div className="panel-chips">
+          {STATUSES.map((s) => (
+            <button key={s} type="button" className={`chip${status === s ? " active" : ""}`} aria-pressed={status === s} onClick={() => setStatus(s)}>
+              {s}
+            </button>
+          ))}
+        </div>
       </div>
+      <div className="field">
+        University
+        <div className="panel-chips">
+          {UNIVERSITIES.map((u) => (
+            <button key={u} type="button" className={`chip${uni === u ? " active" : ""}`} aria-pressed={uni === u} onClick={() => setUni(u)}>
+              {u}
+            </button>
+          ))}
+        </div>
+      </div>
+      {uni === "Other" && (
+        <label className="field">
+          Your university
+          <input value={otherUni} onChange={(e) => setOtherUni(e.target.value)} required maxLength={30} autoFocus placeholder="e.g. Fu Jen Catholic University" />
+        </label>
+      )}
       <div className="field">
         Colour
         <div className="panel-chips">
