@@ -582,3 +582,6 @@ a.create-row{text-decoration:none;}
   .fab{bottom:calc(100px + env(safe-area-inset-bottom,0px));}
   .fab-menu{bottom:calc(172px + env(safe-area-inset-bottom,0px));}
 }
+/* Desktop grid: rows stay their natural height even though the list is
+   stretched to fill the view (min-height above). */
+@media (min-width:1024px){.screen .list:not(.rows){align-content:start;}}
