@@ -397,3 +397,13 @@ html,body{overflow:hidden;height:100%;}
 .spinner{display:inline-block;width:15px;height:15px;margin-right:8px;vertical-align:-2px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .btn:disabled{opacity:.75;cursor:default;}
+
+/* New event page */
+.editor-title{font-family:var(--display);font-size:17px;}
+.auth.editor{max-width:560px;}
+.cover{position:relative;width:100%;height:190px;border-radius:18px;background:var(--ink-2) center/cover no-repeat;border:1.5px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--paper-dim);overflow:hidden;}
+.cover.has{border:none;}
+.cover-hint{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13.5px;font-weight:700;}
+.cover-change{position:absolute;right:10px;bottom:10px;padding:6px 12px;border-radius:999px;background:var(--glass-strong);color:var(--paper);font-size:12px;font-weight:700;}
+.link-btn{align-self:flex-start;font-size:12.5px;font-weight:600;color:var(--paper-dim);text-decoration:underline;}
+.field select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--paper-dim) 50%),linear-gradient(135deg,var(--paper-dim) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px;}

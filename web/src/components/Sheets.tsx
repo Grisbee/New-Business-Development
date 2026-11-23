@@ -2,15 +2,12 @@
 
 import { useState } from "react";
 import { useApp } from "@/components/AppShell";
-import { TAGS } from "@/components/views/Lists";
 import { Ic } from "@/components/Icons";
 import { USER_COLORS } from "@/lib/format";
-import type { Ticket } from "@/lib/types";
 
 export type SheetState =
   | { kind: "cal"; type: "exam" | "deadline" | "other" }
   | { kind: "deadline"; teamId: string }
-  | { kind: "event"; eventKind: "community" | "public"; threadId?: string }
   | { kind: "team" };
 
 const KIND_LABEL = { deadline: "Deadline", exam: "Exam", other: "Other" } as const;
@@ -20,9 +17,7 @@ export function SheetHost({ sheet, onClose }: { sheet: SheetState; onClose: () =
   // Clicking the dimmed backdrop (not the form) closes it.
   return (
     <div className="sheet-wrap" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      {sheet.kind === "event" ? (
-        <EventSheet sheet={sheet} onClose={onClose} />
-      ) : sheet.kind === "team" ? (
+      {sheet.kind === "team" ? (
         <TeamSheet onClose={onClose} />
       ) : (
         <ItemSheet sheet={sheet} onClose={onClose} />
@@ -132,170 +127,6 @@ function ItemSheet({ sheet, onClose }: { sheet: Extract<SheetState, { kind: "cal
       <span className="hint">{team ? "The deadline is posted in the team chat and shows up in everyone’s Calendar." : "Shows up in your Calendar."}</span>
       <button className="btn primary lg" type="submit" disabled={busy}>
         {team ? "Add deadline" : "Add"}
-      </button>
-    </form>
-  );
-}
-
-/* ------------------------------------------------------------ new event */
-
-function EventSheet({ sheet, onClose }: { sheet: Extract<SheetState, { kind: "event" }>; onClose: () => void }) {
-  const { data, me, today, toast, openDetail } = useApp();
-  const pub = sheet.eventKind === "public";
-  const followed = data.threads.filter((t) => t.followed);
-  const [threadId, setThreadId] = useState(sheet.threadId ?? "");
-  const thread = data.threads.find((t) => t.id === threadId);
-  const [tiers, setTiers] = useState<Ticket[]>([]);
-  const [busy, setBusy] = useState(false);
-  const defaultTag = thread && TAGS.community.includes(thread.tag) ? thread.tag : pub ? TAGS.public[0] : "Outdoors";
-
-  async function save(ev: React.FormEvent<HTMLFormElement>) {
-    ev.preventDefault();
-    const f = new FormData(ev.currentTarget);
-    const val = (k: string) => String(f.get(k) ?? "").trim();
-    setBusy(true);
-
-    let image: string | null = null;
-    const photo = f.get("photo");
-    if (photo instanceof File && photo.size > 0) {
-      if (photo.size > 8 * 1024 * 1024) {
-        setBusy(false);
-        return toast("Photos up to 8 MB");
-      }
-      const path = `${me.id}/${crypto.randomUUID()}.${(photo.name.split(".").pop() || "jpg").toLowerCase().slice(0, 4)}`;
-      const up = await data.supabase.storage.from("event-images").upload(path, photo, { contentType: photo.type });
-      if (up.error) {
-        setBusy(false);
-        return toast(`Photo upload failed: ${up.error.message}`);
-      }
-      image = path;
-    }
-
-    const cleanTiers = tiers.filter((t) => t.name.trim()).map((t) => ({ name: t.name.trim(), note: t.note?.trim() || null, price: Math.max(0, Math.round(t.price)) }));
-    const { data: row, error } = await data.supabase
-      .from("events")
-      .insert({
-        kind: sheet.eventKind,
-        thread_id: pub ? null : threadId || null,
-        title: val("title"),
-        tag: val("tag"),
-        starts_on: val("date"),
-        starts_at: val("time"),
-        place: val("place"),
-        description: val("description") || null,
-        price: pub && !cleanTiers.length ? Number(val("price") || 0) : 0,
-        tickets: pub ? cleanTiers : [],
-        max_going: pub ? null : Math.max(2, Number(val("max") || 8)),
-        image,
-      })
-      .select("id")
-      .single();
-    if (error) {
-      setBusy(false);
-      return toast(`Couldn’t post: ${error.message}`);
-    }
-    if (!pub && threadId) {
-      const m = await data.supabase.from("messages").insert({ thread_id: threadId, kind: "event", ref_event: row.id });
-      if (m.error) toast(`Posted, but not shared in the thread: ${m.error.message}`);
-    }
-    await Promise.all([data.loadEvents(), data.loadChats()]);
-    toast(pub ? "Event listed in Public" : "Event posted · also in Community and Calendar");
-    onClose();
-    openDetail(row.id);
-  }
-
-  return (
-    <form className="sheet" onSubmit={save} style={{ maxHeight: "92%", overflowY: "auto" }}>
-      <Head
-        title="New event"
-        sub={pub ? `Listed by ${me.venue_name ?? "your venue"}` : thread ? `Posted in ${thread.name}` : "Community event"}
-        onClose={onClose}
-      />
-      <label className="field">
-        Title
-        <input name="title" required minLength={3} maxLength={80} autoFocus placeholder={pub ? "e.g. Jazz night with the house band" : "e.g. Night fishing at Tamsui pier"} />
-      </label>
-      <div className="row2">
-        <label className="field">
-          Date
-          <input name="date" type="date" required min={today} defaultValue={today} />
-        </label>
-        <label className="field">
-          Time
-          <input name="time" type="time" required defaultValue={pub ? "20:00" : "18:00"} />
-        </label>
-      </div>
-      <label className="field">
-        Place
-        <input name="place" required minLength={2} maxLength={80} placeholder={pub ? "e.g. The Copper Room · Gongguan" : "e.g. Tamsui MRT exit 2"} />
-      </label>
-      <div className="row2">
-        <label className="field">
-          Tag
-          <select name="tag" defaultValue={defaultTag}>
-            {(pub ? TAGS.public : TAGS.community).map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </select>
-        </label>
-        {pub ? (
-          <label className="field">
-            Entry (NT$, 0 = free)
-            <input name="price" type="number" min={0} max={1000000} defaultValue={0} disabled={tiers.length > 0} />
-          </label>
-        ) : (
-          <label className="field">
-            Spots
-            <input name="max" type="number" min={2} max={500} defaultValue={8} />
-          </label>
-        )}
-      </div>
-      {!pub && followed.length > 0 && (
-        <label className="field">
-          Thread (optional)
-          <select value={threadId} onChange={(e) => setThreadId(e.target.value)}>
-            <option value="">None</option>
-            {followed.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-      {pub && (
-        <div className="field">
-          Tickets (optional, booked without payment)
-          {tiers.map((t, i) => (
-            <div key={i} className="row2" style={{ gridTemplateColumns: "1fr 1fr 90px auto" }}>
-              <input placeholder="Name" value={t.name} maxLength={30} onChange={(e) => setTiers((ts) => ts.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
-              <input placeholder="Note" value={t.note ?? ""} maxLength={50} onChange={(e) => setTiers((ts) => ts.map((x, j) => (j === i ? { ...x, note: e.target.value } : x)))} />
-              <input type="number" min={0} placeholder="NT$" value={t.price} onChange={(e) => setTiers((ts) => ts.map((x, j) => (j === i ? { ...x, price: Number(e.target.value) } : x)))} />
-              <button type="button" className="icon-btn" aria-label="Remove ticket" onClick={() => setTiers((ts) => ts.filter((_, j) => j !== i))}>
-                <Ic name="x" size={16} />
-              </button>
-            </div>
-          ))}
-          {tiers.length < 6 && (
-            <button type="button" className="btn" style={{ alignSelf: "flex-start" }} onClick={() => setTiers((ts) => [...ts, { name: "", note: "", price: 0 }])}>
-              + Add a ticket type
-            </button>
-          )}
-        </div>
-      )}
-      <label className="field">
-        Description (optional)
-        <input name="description" maxLength={2000} placeholder="What should people know?" />
-      </label>
-      <label className="field">
-        Photo (optional)
-        <input name="photo" type="file" accept="image/*" />
-      </label>
-      <span className="hint">
-        {pub ? "Shows up in Public events and the Calendar." : "The event shows up in Community events and the Calendar, and in the thread’s chat if you pick one."}
-      </span>
-      <button className="btn primary lg" type="submit" disabled={busy}>
-        {busy ? "Posting…" : "Post event"}
       </button>
     </form>
   );

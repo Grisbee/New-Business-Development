@@ -20,6 +20,8 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
   const [text, setText] = useState("");
   const msgsRef = useRef<HTMLDivElement>(null);
   const col = column(chatRef.type);
+  // Following a thread unlocks its chat: load the messages again then.
+  const followed = chatRef.type === "thread" ? data.threads.find((x) => x.id === chatRef.id)?.followed : true;
 
   const load = useCallback(async () => {
     const { data: rows, error } = await data.supabase
@@ -45,7 +47,7 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
     return () => {
       void data.supabase.removeChannel(channel);
     };
-  }, [data.supabase, chatRef, col, load]);
+  }, [data.supabase, chatRef, col, load, followed]);
 
   useEffect(() => {
     if (msgsRef.current) msgsRef.current.scrollTop = msgsRef.current.scrollHeight;
@@ -133,10 +135,10 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
       tab === "events" ? (
         <div className="elist">
           {t.followed && (
-            <button className="create-row" onClick={() => openSheet({ kind: "event", eventKind: "community", threadId: t.id })}>
+            <a className="create-row" href={`/new-event?kind=community&thread=${t.id}`}>
               <Ic name="plus" size={18} width={2.4} />
               Create an event in this thread
-            </button>
+            </a>
           )}
           {related.length ? (
             related.map((e) => <ERow key={e.id} e={e} />)
@@ -148,8 +150,14 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
             </div>
           )}
         </div>
-      ) : (
+      ) : t.followed ? (
         msgList
+      ) : (
+        <div className="msgs">
+          <div className="empty">
+            Follow <b>{t.name}</b> to read and join the chat.
+          </div>
+        </div>
       );
     foot = !t.followed ? (
       <div className="join-bar">
@@ -165,9 +173,9 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
         setText={setText}
         onSubmit={send}
         before={
-          <button type="button" className="plusbtn" aria-label="Create an event" onClick={() => openSheet({ kind: "event", eventKind: "community", threadId: t.id })}>
+          <a className="plusbtn" aria-label="Create an event" href={`/new-event?kind=community&thread=${t.id}`}>
             <Ic name="calendar" size={19} />
-          </button>
+          </a>
         }
       />
     ) : null;

@@ -434,7 +434,13 @@ export function ThreadsView() {
       {seg === "explore" ? (
         <>
           <Toolbar k="threads" />
-          <div className="list rows">{explore.length ? explore.map((t) => <ThreadRow key={t.id} t={t} mode="all" />) : <NoResults />}</div>
+          <div className="list rows">
+            <Link className="create-row" href="/new-thread">
+              <Ic name="plus" size={18} width={2.4} />
+              Start a thread
+            </Link>
+            {explore.length ? explore.map((t) => <ThreadRow key={t.id} t={t} mode="all" />) : <NoResults />}
+          </div>
         </>
       ) : (
         <div className="list rows">

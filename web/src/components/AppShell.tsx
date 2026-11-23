@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Ic } from "@/components/Icons";
 import { useAppData, type AppData } from "@/lib/useAppData";
 import { initials, todayIso } from "@/lib/format";
@@ -16,8 +17,8 @@ export type Tab = "public" | "community" | "threads" | "calendar" | "mine" | "te
 type ListKey = "public" | "community" | "threads";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: "public", label: "Public", icon: "ticket" },
   { id: "community", label: "Community", icon: "users" },
+  { id: "public", label: "Public", icon: "ticket" },
   { id: "threads", label: "Threads", icon: "chat" },
   { id: "calendar", label: "Calendar", icon: "calendar" },
   { id: "mine", label: "My events", icon: "star" },
@@ -63,9 +64,10 @@ export function useApp() {
 
 export function AppShell({ me }: { me: Profile }) {
   const data = useAppData(me);
+  const router = useRouter();
   const today = todayIso();
   const [uni, setUni] = useState(false);
-  const [tab, setTabState] = useState<Tab>("public");
+  const [tab, setTabState] = useState<Tab>("community");
   const [ui, setUiState] = useState<UiState>({
     tag: { public: null, community: null, threads: null },
     panel: { public: null, community: null, threads: null },
@@ -87,9 +89,20 @@ export function AppShell({ me }: { me: Profile }) {
 
   // The tab lives in the URL hash, as in the mockup, so reloads keep it.
   useEffect(() => {
+    const eventId = new URLSearchParams(window.location.search).get("event");
+    if (eventId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reading the URL once on mount
+      setDetail(eventId);
+      history.replaceState(null, "", `/${window.location.hash}`);
+    }
+    const threadId = new URLSearchParams(window.location.search).get("thread");
+    if (threadId) {
+      setChat({ ref: { type: "thread", id: threadId }, tab: "chat" });
+      history.replaceState(null, "", `/${window.location.hash}`);
+    }
     const start = window.location.hash.slice(1) as Tab;
     if ([...TABS, ...UNI_TABS].some((t) => t.id === start)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- reading the hash once on mount
+       
       setTabState(start);
       if (UNI_TABS.some((t) => t.id === start)) setUni(true);
     }
@@ -168,7 +181,7 @@ export function AppShell({ me }: { me: Profile }) {
     setChat(null);
     setDetail(null);
     setSheet(null);
-    setTab(next ? "teams" : "public");
+    setTab(next ? "teams" : "community");
     toast(next ? "University mode" : "City mode");
   };
 
@@ -201,8 +214,7 @@ export function AppShell({ me }: { me: Profile }) {
   const fabShown = (tab === "public" && (me.role === "venue" || me.role === "admin")) || tab === "community" || tab === "ucal";
   const onFab = () => {
     if (tab === "ucal") setSheet({ kind: "cal", type: "exam" });
-    else if (tab === "public") setSheet({ kind: "event", eventKind: "public" });
-    else setSheet({ kind: "event", eventKind: "community" });
+    else router.push(`/new-event?kind=${tab === "public" ? "public" : "community"}`);
   };
 
   const views: Record<Tab, React.ReactNode> = {
