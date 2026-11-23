@@ -23,14 +23,24 @@ function useSubmit() {
 export function LoginForm() {
   const params = useSearchParams();
   const { error, busy, run } = useSubmit();
-  const linkError = params.get("error") === "link" ? "That link has expired or was already used. Sign in, or ask for a new one." : null;
+  // The link can confirm the email yet fail to sign in (opened in another
+  // browser or the mail app's), so the likely next step is just signing in.
+  const linkError =
+    params.get("error") === "link" ? "That link has already been used or was opened in another browser. If you confirmed your email, just sign in." : null;
+  const [unconfirmed, setUnconfirmed] = useState<string | null>(null);
+  const [resent, setResent] = useState(false);
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
         void run(async () => {
-          const { error } = await createClient().auth.signInWithPassword({ email: String(f.get("email")), password: String(f.get("password")) });
+          const email = String(f.get("email")).trim();
+          const { error } = await createClient().auth.signInWithPassword({ email, password: String(f.get("password")) });
+          if (error?.code === "email_not_confirmed") {
+            setUnconfirmed(email);
+            return "Confirm your email first: open the link we sent you.";
+          }
           if (error) return error.message;
           // Replaced, so Back doesn't return to the form.
           window.location.replace("/");
@@ -46,6 +56,19 @@ export function LoginForm() {
         <input name="password" type="password" required autoComplete="current-password" />
       </label>
       {(error ?? linkError) && <p className="error">{error ?? linkError}</p>}
+      {unconfirmed && (
+        <button
+          type="button"
+          className="btn lg"
+          disabled={resent}
+          onClick={async () => {
+            const { error } = await createClient().auth.resend({ type: "signup", email: unconfirmed, options: { emailRedirectTo: callback("/onboarding") } });
+            if (!error) setResent(true);
+          }}
+        >
+          {resent ? "Sent · check your inbox" : "Send the confirmation link again"}
+        </button>
+      )}
       <button className="btn primary lg" disabled={busy}>
         {busy ? "Signing in…" : "Sign in"}
       </button>
