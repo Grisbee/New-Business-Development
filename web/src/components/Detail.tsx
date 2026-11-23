@@ -283,7 +283,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             <button className="hero-back" aria-label="Back" onClick={onClose}>
               <Ic name="back" size={22} width={2.2} />
             </button>
-            <ShareButton e={e} className="hero-back hero-share" />
+            <ShareButton e={e} className="hero-back hero-share" size={22} />
           </div>
         ) : (
           <div className="hero ph" style={{ background: thread?.color ?? "var(--ink-3)" }}>
@@ -291,7 +291,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             <button className="hero-back" aria-label="Back" onClick={onClose}>
               <Ic name="back" size={22} width={2.2} />
             </button>
-            <ShareButton e={e} className="hero-back hero-share" />
+            <ShareButton e={e} className="hero-back hero-share" size={22} />
           </div>
         )}
         <div className="dbody">

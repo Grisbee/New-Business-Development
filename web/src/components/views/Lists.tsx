@@ -211,7 +211,7 @@ export function useShareEvent() {
   };
 }
 
-export function ShareButton({ e, className = "chatbtn" }: { e: EventRow; className?: string }) {
+export function ShareButton({ e, className = "chatbtn", size = 17 }: { e: EventRow; className?: string; size?: number }) {
   const share = useShareEvent();
   return (
     <button
@@ -222,7 +222,7 @@ export function ShareButton({ e, className = "chatbtn" }: { e: EventRow; classNa
         void share(e);
       }}
     >
-      <Ic name="share" size={17} />
+      <Ic name="share" size={size} width={2.2} />
     </button>
   );
 }
@@ -310,7 +310,8 @@ const hostName = (e: EventRow) => (e.kind === "public" ? (e.host?.venue_name ?? 
 /* ------------------------------------------------------------ public tab */
 
 export function PublicView() {
-  const { data, today, openDetail, me } = useApp();
+  const { data, today, openDetail, me, ui } = useApp();
+  const filtering = (k: "public" | "community") => !!(ui.q[k].trim() || ui.tag[k] || ui.range[k]);
   const items = useFiltered(
     "public",
     upcoming(data.events, today).filter((e) => e.kind === "public"),
@@ -324,7 +325,7 @@ export function PublicView() {
       </div>
       <Toolbar k="public" />
       <div className="list">
-        {!items.length && <NoResults />}
+        {!items.length && (filtering("public") ? <NoResults /> : <div className="empty">No public events yet. Bars, clubs and venues list theirs here.</div>)}
         {items.map((e) => (
           <article key={e.id} className="card has-img" onClick={() => openDetail(e.id)}>
             <div className="banner" style={{ backgroundImage: `url(${imageUrl(e.image) ?? "/demo/p0.jpg"})` }}>
@@ -360,7 +361,8 @@ export function PublicView() {
 /* --------------------------------------------------------- community tab */
 
 export function CommunityView() {
-  const { data, today, openDetail, isFull } = useApp();
+  const { data, today, openDetail, isFull, ui } = useApp();
+  const filtering = (k: "public" | "community") => !!(ui.q[k].trim() || ui.tag[k] || ui.range[k]);
   const items = useFiltered(
     "community",
     upcoming(data.events, today).filter((e) => e.kind === "community"),
@@ -374,7 +376,7 @@ export function CommunityView() {
       </div>
       <Toolbar k="community" />
       <div className="list">
-        {!items.length && <NoResults />}
+        {!items.length && (filtering("community") ? <NoResults /> : <div className="empty">No community events yet. Tap <b>+</b> to start one.</div>)}
         {items.map((e) => (
           <article key={e.id} className="card" onClick={() => openDetail(e.id)}>
             <div className="card-top">
