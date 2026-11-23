@@ -1,5 +1,6 @@
 // Icon paths from the mockup (24×24, stroked). <Ic name size width /> draws one.
 const ICONS: Record<string, string> = {
+  trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
   sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   share:'<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/>',
   ticket:'<path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z"/><path d="M14 5v14" stroke-dasharray="2 2.5"/>',
@@ -63,5 +64,5 @@ export function Ic({ name, size = 14, width = 2 }: { name: string; size?: number
 }
 
 export const ICON_CHOICES = Object.keys(ICONS).filter(
-  (k) => !["back", "send", "x", "check", "plus", "minus", "search", "sort", "tag", "clip", "mappin", "clock", "shield", "flag", "pen", "chat", "ticket", "calendar", "star", "share", "sun"].includes(k),
+  (k) => !["back", "send", "x", "check", "plus", "minus", "search", "sort", "tag", "clip", "mappin", "clock", "shield", "flag", "pen", "chat", "ticket", "calendar", "star", "share", "sun", "trash"].includes(k),
 );

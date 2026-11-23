@@ -291,7 +291,20 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             <button className="hero-back" aria-label="Back" onClick={onClose}>
               <Ic name="back" size={22} width={2.2} />
             </button>
-            <ShareButton e={e} className="hero-back hero-share" size={22} />
+            {/* Top right of the photo: share, and for the host edit / delete. */}
+            <div className="hero-actions">
+              {e.host_id === me.id && (
+                <a className="hero-btn" href={`/new-event?edit=${e.id}`} aria-label="Edit event" title="Edit event">
+                  <Ic name="pen" size={20} width={2.2} />
+                </a>
+              )}
+              {(e.host_id === me.id || me.role === "admin") && (
+                <button className="hero-btn danger" aria-label="Delete event" title="Delete event" onClick={() => void remove()}>
+                  <Ic name="trash" size={20} width={2.2} />
+                </button>
+              )}
+              <ShareButton e={e} className="hero-btn" size={22} />
+            </div>
           </div>
         ) : (
           <div className="hero ph" style={{ background: thread?.color ?? "var(--ink-3)" }}>
@@ -299,7 +312,20 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             <button className="hero-back" aria-label="Back" onClick={onClose}>
               <Ic name="back" size={22} width={2.2} />
             </button>
-            <ShareButton e={e} className="hero-back hero-share" size={22} />
+            {/* Top right of the photo: share, and for the host edit / delete. */}
+            <div className="hero-actions">
+              {e.host_id === me.id && (
+                <a className="hero-btn" href={`/new-event?edit=${e.id}`} aria-label="Edit event" title="Edit event">
+                  <Ic name="pen" size={20} width={2.2} />
+                </a>
+              )}
+              {(e.host_id === me.id || me.role === "admin") && (
+                <button className="hero-btn danger" aria-label="Delete event" title="Delete event" onClick={() => void remove()}>
+                  <Ic name="trash" size={20} width={2.2} />
+                </button>
+              )}
+              <ShareButton e={e} className="hero-btn" size={22} />
+            </div>
           </div>
         )}
         <div className="dbody">
@@ -347,19 +373,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
           {e.description && <p>{e.description}</p>}
           {e.host_id === me.id && e.join_mode === "approval" && <Requests eventId={e.id} />}
           {section}
-          {(e.host_id === me.id || me.role === "admin") && (
-            <div className="host-actions">
-              {e.host_id === me.id && (
-                <a className="btn" href={`/new-event?edit=${e.id}`}>
-                  <Ic name="pen" size={14} width={2.2} />
-                  Edit event
-                </a>
-              )}
-              <button className="btn danger-outline" onClick={() => void remove()}>
-                Delete event
-              </button>
-            </div>
-          )}
+
         </div>
       </div>
       <div className="dbar">{bar}</div>

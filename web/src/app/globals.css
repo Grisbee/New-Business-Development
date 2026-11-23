@@ -556,3 +556,7 @@ a.create-row{text-decoration:none;}
   .topbar .theme-btn{display:none;}
   .pmenu-theme{display:flex!important;}
 }
+/* Buttons over the event photo, top right */
+.hero-actions{position:absolute;top:12px;right:12px;z-index:1;display:flex;gap:8px;}
+.hero-btn{width:46px;height:46px;border-radius:50%;background:var(--glass);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;color:var(--paper);text-decoration:none;}
+.hero-btn.danger{color:var(--deadline);}
