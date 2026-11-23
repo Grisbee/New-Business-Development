@@ -18,13 +18,18 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
+  // Who's going: refetched when the count or my own status changes, not on
+  // every events reload.
+  const kind = e?.kind;
+  const goingCount = e?.going_count;
+  const myStatus = data.going.get(id)?.status;
   useEffect(() => {
-    if (!e || e.kind !== "community") return;
+    if (kind !== "community") return;
     let cancelled = false;
     void data.supabase
       .from("going")
       .select("user_id, status, person:profiles!going_user_id_fkey(id, username, display_name, color, tag, venue_name, role)")
-      .eq("event_id", e.id)
+      .eq("event_id", id)
       .eq("status", "going")
       .order("created_at")
       .then(({ data: rows }) => {
@@ -33,7 +38,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, [data.supabase, e, data.going]);
+  }, [data.supabase, id, kind, goingCount, myStatus]);
 
   if (!e) return null;
   const on = isGoing(e.id);

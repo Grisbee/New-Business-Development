@@ -8,6 +8,7 @@ import { TAGS, tagForThread } from "@/components/views/Lists";
 import { todayIso } from "@/lib/format";
 import type { EventRow, Profile, Repeat, Ticket } from "@/lib/types";
 import { imageUrl } from "@/lib/format";
+import { resizeImage } from "@/lib/resizeImage";
 
 // The host counts as one of them.
 const SPOTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20, 25, 30, 40, 50, 75, 100];
@@ -70,9 +71,10 @@ export function EventEditor({
 
     let image: string | null = keepImage;
     if (photo) {
-      if (photo.size > 8 * 1024 * 1024) return fail("Photos up to 8 MB.");
-      const path = `${me.id}/${crypto.randomUUID()}.${(photo.name.split(".").pop() || "jpg").toLowerCase().slice(0, 4)}`;
-      const up = await supabase.storage.from("event-images").upload(path, photo, { contentType: photo.type });
+      const small = await resizeImage(photo, 1600);
+      if (small.size > 8 * 1024 * 1024) return fail("Photos up to 8 MB.");
+      const path = `${me.id}/${crypto.randomUUID()}.${(small.name.split(".").pop() || "jpg").toLowerCase().slice(0, 4)}`;
+      const up = await supabase.storage.from("event-images").upload(path, small, { contentType: small.type });
       if (up.error) return fail(`Photo upload failed: ${up.error.message}`);
       image = path;
     }

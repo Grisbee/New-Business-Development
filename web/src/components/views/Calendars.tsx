@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useApp } from "@/components/AppShell";
 import { ERow, lastMsgText } from "@/components/views/Lists";
 import { Ic } from "@/components/Icons";
-import { DAYS, MON, MONTHS, chatTime, dueIn, fmtShort, isoOf, occurrences, parse, to12h } from "@/lib/format";
+import { DAYS, MON, MONTHS, addDays, chatTime, dueIn, fmtShort, isoOf, occurrences, parse, to12h } from "@/lib/format";
+import type { EventRow } from "@/lib/types";
 import type { UniItem } from "@/lib/types";
 
 const KIND_LABEL = { deadline: "Deadline", exam: "Exam", other: "Other" } as const;
@@ -106,9 +107,19 @@ const dayHead = (iso: string) => {
 
 export function CalendarView() {
   const { data, ui, setUi, isGoing } = useApp();
-  const sorted = data.events.slice().sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-  const on = (e: (typeof sorted)[number], iso: string) => occurrences(e, iso, iso).length > 0;
-  const dayEvents = sorted.filter((e) => on(e, ui.calDay));
+  // Every event's dates within about a year of the selected day, by day,
+  // computed once instead of per cell.
+  const byDay = useMemo(() => {
+    const from = addDays(ui.calDay, -400);
+    const to = addDays(ui.calDay, 400);
+    const m = new Map<string, EventRow[]>();
+    data.events
+      .slice()
+      .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+      .forEach((e) => occurrences(e, from, to).forEach((d) => m.set(d, [...(m.get(d) ?? []), e])));
+    return m;
+  }, [data.events, ui.calDay]);
+  const dayEvents = byDay.get(ui.calDay) ?? [];
   return (
     <>
       <div className="tab-head">
@@ -117,7 +128,7 @@ export function CalendarView() {
       <MonthGrid
         selected={ui.calDay}
         onSelect={(iso) => setUi((u) => ({ ...u, calDay: iso }))}
-        dots={(iso) => sorted.filter((e) => on(e, iso)).map((e) => ({ cls: e.kind, star: isGoing(e.id) }))}
+        dots={(iso) => (byDay.get(iso) ?? []).map((e) => ({ cls: e.kind, star: isGoing(e.id) }))}
         legend={
           <>
             <span>

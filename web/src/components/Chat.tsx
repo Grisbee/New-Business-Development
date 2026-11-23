@@ -5,6 +5,7 @@ import { useApp } from "@/components/AppShell";
 import { ERow, Thumb } from "@/components/views/Lists";
 import { UniRow } from "@/components/views/Calendars";
 import { Ic } from "@/components/Icons";
+import { resizeImage } from "@/lib/resizeImage";
 import { USER_COLORS, goingText, chatTime, dueIn, fmtShort, initials, to12h } from "@/lib/format";
 import { nameOf, type ChatRef, type FileInfo, type Message } from "@/lib/types";
 
@@ -26,6 +27,23 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
   // Following a thread unlocks its chat: load the messages again then.
   const followed = chatRef.type === "thread" ? data.threads.find((x) => x.id === chatRef.id)?.followed : true;
 
+  // Signs links only for photos not signed yet, so they aren't re-downloaded.
+  const signed = useRef(new Set<string>());
+  const signPhotos = useCallback(
+    async (list: Message[]) => {
+      const paths = list.filter((m) => m.kind === "image" && m.file && !signed.current.has(m.file.path)).map((m) => m.file!.path);
+      if (!paths.length) return;
+      paths.forEach((p) => signed.current.add(p));
+      const { data: urls } = await data.supabase.storage.from("chat-images").createSignedUrls(paths, 3600);
+      setPhotoUrls((prev) => {
+        const next = new Map(prev);
+        (urls ?? []).forEach((x) => x.path && x.signedUrl && next.set(x.path, x.signedUrl));
+        return next;
+      });
+    },
+    [data.supabase],
+  );
+
   const load = useCallback(async () => {
     const { data: rows, error } = await data.supabase
       .from("messages")
@@ -36,29 +54,45 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
     if (error) return toast(`Couldn’t load the chat: ${error.message}`);
     const list = ((rows ?? []) as unknown as Message[]).reverse();
     setMsgs(list);
-    const paths = list.filter((m) => m.kind === "image" && m.file).map((m) => m.file!.path);
-    if (paths.length) {
-      const { data: signed } = await data.supabase.storage.from("chat-images").createSignedUrls(paths, 3600);
-      const urls = new Map<string, string>();
-      (signed ?? []).forEach((x) => x.path && x.signedUrl && urls.set(x.path, x.signedUrl));
-      setPhotoUrls(urls);
-    }
-  }, [data.supabase, col, chatRef.id, toast]);
+    await signPhotos(list);
+  }, [data.supabase, col, chatRef.id, toast, signPhotos]);
 
+  // Adds one message (from sending or realtime) unless it's already there.
+  const append = useCallback(
+    (m: Message) => {
+      setMsgs((list) => (list.some((x) => x.id === m.id) ? list : [...list, m]));
+      void signPhotos([m]);
+    },
+    [signPhotos],
+  );
+
+  const lastRead = useRef(0);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- loading the chat on open
     void load();
     const channel = data.supabase
       .channel(`chat:${chatRef.type}:${chatRef.id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `${col}=eq.${chatRef.id}` }, () => {
-        void load();
-        void data.supabase.rpc("mark_read", { p_chat_key: `${chatRef.type}:${chatRef.id}` });
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `${col}=eq.${chatRef.id}` }, (payload) => {
+        const id = (payload.new as { id: number }).id;
+        void data.supabase
+          .from("messages")
+          .select(MSG_SELECT)
+          .eq("id", id)
+          .maybeSingle()
+          .then(({ data: row }) => row && append(row as unknown as Message));
+        // Read marker at most every 5 s while the chat is open.
+        if (Date.now() - lastRead.current > 5000) {
+          lastRead.current = Date.now();
+          void data.supabase.rpc("mark_read", { p_chat_key: `${chatRef.type}:${chatRef.id}` });
+        }
       })
       .subscribe();
     return () => {
       void data.supabase.removeChannel(channel);
+      // And once on close, so the badge clears.
+      void data.supabase.rpc("mark_read", { p_chat_key: `${chatRef.type}:${chatRef.id}` });
     };
-  }, [data.supabase, chatRef, col, load, followed]);
+  }, [data.supabase, chatRef, col, load, followed, append]);
 
   useEffect(() => {
     if (msgsRef.current) msgsRef.current.scrollTop = msgsRef.current.scrollHeight;
@@ -69,12 +103,12 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
     const body = text.trim();
     if (!body) return;
     setText("");
-    const { error } = await data.supabase.from("messages").insert({ [col]: chatRef.id, kind: "text", body });
+    const { data: row, error } = await data.supabase.from("messages").insert({ [col]: chatRef.id, kind: "text", body }).select(MSG_SELECT).single();
     if (error) {
       setText(body);
       return toast(`Not sent: ${error.message}`);
     }
-    await load();
+    append(row as unknown as Message);
   }
 
   async function attach(file: File) {
@@ -84,18 +118,24 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
     const up = await data.supabase.storage.from("team-files").upload(path, file);
     if (up.error) return toast(`Upload failed: ${up.error.message}`);
     const size = file.size > 1048576 ? `${(file.size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(file.size / 1024))} KB`;
-    const { error } = await data.supabase
+    const { data: row, error } = await data.supabase
       .from("messages")
-      .insert({ team_id: chatRef.id, kind: "file", file: { name: file.name, ext, size, path } satisfies FileInfo });
+      .insert({ team_id: chatRef.id, kind: "file", file: { name: file.name, ext, size, path } satisfies FileInfo })
+      .select(MSG_SELECT)
+      .single();
     if (error) return toast(`Not shared: ${error.message}`);
     toast("File shared with the team");
-    await load();
+    append(row as unknown as Message);
   }
 
-  async function sendPhoto(file: File) {
-    if (!file.type.startsWith("image/")) return toast("Pick a photo");
-    if (file.size > 10 * 1024 * 1024) return toast("Photos up to 10 MB");
+  async function sendPhoto(original: File) {
+    if (!original.type.startsWith("image/")) return toast("Pick a photo");
     setSendingPhoto(true);
+    const file = await resizeImage(original, 1280);
+    if (file.size > 10 * 1024 * 1024) {
+      setSendingPhoto(false);
+      return toast("Photos up to 10 MB");
+    }
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 4);
     const path = `${chatRef.type}/${chatRef.id}/${crypto.randomUUID()}.${ext}`;
     const up = await data.supabase.storage.from("chat-images").upload(path, file, { contentType: file.type });
@@ -104,10 +144,14 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
       return toast(`Upload failed: ${up.error.message}`);
     }
     const size = file.size > 1048576 ? `${(file.size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(file.size / 1024))} KB`;
-    const { error } = await data.supabase.from("messages").insert({ [col]: chatRef.id, kind: "image", file: { name: file.name, ext, size, path } });
+    const { data: row, error } = await data.supabase
+      .from("messages")
+      .insert({ [col]: chatRef.id, kind: "image", file: { name: file.name, ext, size, path } })
+      .select(MSG_SELECT)
+      .single();
     setSendingPhoto(false);
     if (error) return toast(`Not sent: ${error.message}`);
-    await load();
+    append(row as unknown as Message);
   }
 
   async function openFile(f: FileInfo) {

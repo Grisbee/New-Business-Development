@@ -30,7 +30,7 @@ export function useAppData(me: Profile) {
     const { data, error } = await supabase
       .from("events")
       .select(EVENT_SELECT)
-      .or(`starts_on.gte.${addDays(today, -31)},repeat.neq.none`)
+      .or(`starts_on.gte.${addDays(today, -31)},and(repeat.neq.none,or(repeat_until.is.null,repeat_until.gte.${addDays(today, -31)}))`)
       .order("starts_on")
       .order("starts_at");
     if (error) return setError(error.message);
@@ -112,24 +112,45 @@ export function useAppData(me: Profile) {
 
   // Realtime: new messages refresh previews and badges; going/event changes
   // refresh counts. Debounced, since a burst of changes needs one reload.
+  // Loaders asked for by realtime events, run together 300 ms after the
+  // last one (a burst needs one reload; none of them may be dropped).
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queued = useRef(new Set<() => Promise<unknown>>());
   useEffect(() => {
-    const schedule = (fn: () => void) => {
+    const schedule = (...fns: (() => Promise<unknown>)[]) => {
+      fns.forEach((f) => queued.current.add(f));
       if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(fn, 300);
+      timer.current = setTimeout(() => {
+        const run = [...queued.current];
+        queued.current.clear();
+        void Promise.all(run.map((f) => f()));
+      }, 300);
     };
+    const today = todayIso();
     const channel = supabase
       .channel("app")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => schedule(() => void loadChats()))
-      .on("postgres_changes", { event: "*", schema: "public", table: "going" }, () =>
-        schedule(() => void Promise.all([loadEvents(), loadGoing(), loadChats(), loadRequests()])),
+      // RLS limits these to chats I can read.
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => schedule(loadChats))
+      // My own joins, approvals and waitlist moves.
+      .on("postgres_changes", { event: "*", schema: "public", table: "going", filter: `user_id=eq.${me.id}` }, () =>
+        schedule(loadGoing, loadChats),
       )
-      .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => schedule(() => void loadEvents()))
+      // Requests and answers reach me as notifications.
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${me.id}` }, () =>
+        schedule(loadRequests, loadGoing, loadEvents),
+      )
+      // Counts and edits: patch the row in place; new or removed events reload.
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "events" }, (payload) => {
+        const row = payload.new as Omit<EventRow, "host" | "next_on">;
+        setEvents((list) => list.map((e) => (e.id === row.id ? { ...e, ...row, host: e.host, next_on: nextOccurrence(row, today) } : e)));
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "events" }, () => schedule(loadEvents))
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "events" }, () => schedule(loadEvents, loadGoing, loadChats))
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [supabase, loadChats, loadEvents, loadGoing, loadRequests]);
+  }, [supabase, me.id, loadChats, loadEvents, loadGoing, loadRequests]);
 
   return {
     supabase,
