@@ -560,3 +560,7 @@ a.create-row{text-decoration:none;}
 .hero-actions{position:absolute;top:12px;right:12px;z-index:1;display:flex;gap:8px;}
 .hero-btn{width:46px;height:46px;border-radius:50%;background:var(--glass);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;color:var(--paper);text-decoration:none;}
 .hero-btn.danger{color:var(--deadline);}
+/* The view scrolls; its sections keep their height. On phones the last
+   rows need room to scroll clear of the bottom nav and the + button. */
+.view>*{flex-shrink:0;}
+@media (max-width:1023px){.view>.list:last-child{padding-bottom:calc(170px + env(safe-area-inset-bottom,0px));}}

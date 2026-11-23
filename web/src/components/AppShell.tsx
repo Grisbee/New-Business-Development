@@ -280,7 +280,7 @@ export function AppShell({ me }: { me: Profile }) {
     setSheet(null);
     setFabMenu(false);
     setTab(next ? "teams" : "community");
-    toast(next ? "University mode" : "City mode");
+    toast(next ? "Uni Mode" : "City mode");
   };
 
   const ctx: Ctx = {
@@ -374,7 +374,7 @@ export function AppShell({ me }: { me: Profile }) {
               <path d="M22 9 12 4 2 9l10 5 10-5z" />
               <path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5M22 9v6" />
             </svg>
-            University
+            Uni Mode
           </button>
           <ThemeButton />
           <Bell userId={me.id} onOpenEvent={(id) => openDetail(id)} />
