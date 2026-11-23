@@ -222,7 +222,7 @@ export function AppShell({ me }: { me: Profile }) {
           <div className="logo">
             {/* eslint-disable-next-line @next/next/no-img-element -- small inline brand mark */}
             <img src="/icons/sidequest-icon.svg" alt="" />
-            Side<span className="brand">Quest</span>
+            <span>Side<span className="brand">Quest</span></span>
           </div>
           <span className="spacer" />
           <button className="mode" aria-pressed={uni} onClick={() => setMode(!uni)}>
