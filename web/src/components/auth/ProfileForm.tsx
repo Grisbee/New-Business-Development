@@ -5,7 +5,11 @@ import { createClient } from "@/lib/supabase/client";
 import { USER_COLORS } from "@/lib/format";
 
 export const UNIVERSITIES = ["NTU", "NTUST", "NTNU", "NCCU", "NTUT", "TMU", "NYCU", "Other"];
-const STATUSES = ["Exchange", "Degree student", "Expat", "Local"];
+const STATUSES = ["Exchange", "Degree student", "Expat", "Local resident"];
+// Only students pick a university.
+const STUDENT = new Set(["Exchange", "Degree student"]);
+// Ten, so the row of swatches fills the width.
+const COLORS = [...USER_COLORS, "#A8D8EA", "#FFD6A5", "#CDB4DB"];
 
 // Username, who you are and your university: shown under your name in
 // "Who's going" and chats. Used for onboarding and for editing later.
@@ -34,17 +38,18 @@ export function ProfileForm({
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const username = String(f.get("username")).trim().toLowerCase();
-    const university = uni === "Other" ? otherUni.trim() : uni;
+    const student = STUDENT.has(status);
+    const university = !student ? null : uni === "Other" ? otherUni.trim() : uni;
     const firstName = String(f.get("first_name")).trim();
     // Only the first three letters are ever sent.
     const lastShort = [...String(f.get("last_name")).trim()].slice(0, 3).join("");
     if (!firstName || !lastShort) return setError("Add your first and last name.");
     if (!/^[a-z0-9._]{3,20}$/.test(username)) return setError("3–20 characters: letters, numbers, dots and underscores.");
-    if (!university) return setError("Type your university’s name.");
+    if (student && !university) return setError("Type your university’s name.");
     setBusy(true);
     const { error } = await createClient()
       .from("profiles")
-      .update({ username, first_name: firstName, last_short: lastShort, tag: `${status} · ${university}`.slice(0, 40), university, color })
+      .update({ username, first_name: firstName, last_short: lastShort, tag: (university ? `${status} · ${university}` : status).slice(0, 40), university, color })
       .eq("id", userId)
       .select("id")
       .single();
@@ -65,7 +70,7 @@ export function ProfileForm({
           <input name="last_name" required maxLength={40} defaultValue={initial.last_short ?? ""} autoComplete="family-name" />
         </label>
       </div>
-      <span className="hint">Only the first 3 letters of your last name are saved and shown, e.g. “Paweł Śli”.</span>
+      <span className="hint">Only the first 3 letters of your last name are saved and shown, e.g. “John Smi” instead of “John Smith”.</span>
       <label className="field">
         Username
         <input name="username" required defaultValue={initial.username ?? ""} maxLength={20} autoCapitalize="none" placeholder="e.g. marco.it" />
@@ -80,17 +85,19 @@ export function ProfileForm({
           ))}
         </div>
       </div>
-      <div className="field">
-        University
-        <div className="panel-chips">
-          {UNIVERSITIES.map((u) => (
-            <button key={u} type="button" className={`chip${uni === u ? " active" : ""}`} aria-pressed={uni === u} onClick={() => setUni(u)}>
-              {u}
-            </button>
-          ))}
+      {STUDENT.has(status) && (
+        <div className="field">
+          University
+          <div className="panel-chips">
+            {UNIVERSITIES.map((u) => (
+              <button key={u} type="button" className={`chip${uni === u ? " active" : ""}`} aria-pressed={uni === u} onClick={() => setUni(u)}>
+                {u}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-      {uni === "Other" && (
+      )}
+      {STUDENT.has(status) && uni === "Other" && (
         <label className="field">
           Your university
           <input value={otherUni} onChange={(e) => setOtherUni(e.target.value)} required maxLength={30} autoFocus placeholder="e.g. Fu Jen Catholic University" />
@@ -98,16 +105,16 @@ export function ProfileForm({
       )}
       <div className="field">
         Colour
-        <div className="panel-chips">
-          {USER_COLORS.map((c) => (
+        <div className="swatches">
+          {COLORS.map((c) => (
             <button
               key={c}
               type="button"
               aria-label={`Colour ${c}`}
               aria-pressed={c === color}
               onClick={() => setColor(c)}
-              className="avatar"
-              style={{ background: c, width: 32, height: 32, boxShadow: c === color ? "0 0 0 2px var(--accent)" : undefined }}
+              className="swatch"
+              style={{ background: c, boxShadow: c === color ? "0 0 0 2px var(--ink), 0 0 0 4px var(--accent)" : undefined }}
             />
           ))}
         </div>
