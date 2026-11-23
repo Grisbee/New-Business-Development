@@ -170,20 +170,21 @@ export function Thumb({ e, cls }: { e: EventRow; cls: string }) {
   );
 }
 
-function ChatButton({ e, size }: { e: EventRow; size?: number }) {
+function ChatButton({ e }: { e: EventRow }) {
   const { data, openChat } = useApp();
   const unread = data.chats.get(`event:${e.id}`)?.unread ?? 0;
+  // Same size as the Going button next to it, with a label.
   return (
     <button
-      className="chatbtn"
-      style={size ? { width: size, height: size } : undefined}
+      className="btn chat-btn"
       aria-label="Open event chat"
       onClick={(ev) => {
         ev.stopPropagation();
         openChat({ type: "event", id: e.id });
       }}
     >
-      <Ic name="chat" size={size ? 20 : 18} />
+      <Ic name="chat" size={14} width={2.2} />
+      Chat
       {unread ? <span className="badge">{unread}</span> : null}
     </button>
   );

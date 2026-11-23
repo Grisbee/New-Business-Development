@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Ic } from "@/components/Icons";
 import { useAppData, type AppData } from "@/lib/useAppData";
 import { createClient } from "@/lib/supabase/client";
+import { Bell } from "@/components/Bell";
 import { initials, todayIso } from "@/lib/format";
 import type { ChatRef, EventRow, Profile } from "@/lib/types";
 import { PublicView, CommunityView, ThreadsView, MineView } from "@/components/views/Lists";
@@ -339,6 +340,7 @@ export function AppShell({ me }: { me: Profile }) {
             University
           </button>
           <ThemeButton />
+          <Bell userId={me.id} onOpenEvent={(id) => openDetail(id)} />
           <ProfileMenu me={me} />
         </header>
 

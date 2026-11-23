@@ -60,7 +60,12 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
 
   async function remove() {
     if (!e) return;
-    const ok = await confirm({ title: "Delete this event?", body: `“${e.title}” and its group chat will be gone for everyone.`, ok: "Delete", danger: true });
+    const ok = await confirm({
+      title: "Delete this event?",
+      body: `“${e.title}” and its group chat will be gone for everyone. Everyone who joined or asked to join gets a notification that it’s cancelled.`,
+      ok: "Delete event",
+      danger: true,
+    });
     if (!ok) return;
     const { error } = await data.supabase.from("events").delete().eq("id", e.id);
     if (error) return toast(`Couldn’t delete: ${error.message}`);
