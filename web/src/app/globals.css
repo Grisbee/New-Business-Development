@@ -393,3 +393,7 @@ html,body{overflow:hidden;height:100%;}
 .auth h1,.auth h2,.auth-sub,.auth .ok,.auth .error{text-align:center;}
 .swatches{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;}
 .swatch{width:100%;aspect-ratio:1;border-radius:50%;}
+/* Busy buttons: a small spinner before the label. */
+.spinner{display:inline-block;width:15px;height:15px;margin-right:8px;vertical-align:-2px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.btn:disabled{opacity:.75;cursor:default;}

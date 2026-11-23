@@ -52,8 +52,11 @@ export function ProfileForm({
       .eq("id", userId)
       .select("id")
       .single();
-    setBusy(false);
-    if (error) return setError(error.message);
+    if (error) {
+      setBusy(false);
+      return setError(error.message);
+    }
+    // Stays busy until the next page has loaded.
     window.location.replace(then);
   }
 
@@ -120,8 +123,9 @@ export function ProfileForm({
         </div>
       </div>
       {error && <p className="error">{error}</p>}
-      <button className="btn primary lg" disabled={busy}>
-        {submitLabel}
+      <button className="btn primary lg" disabled={busy} aria-busy={busy}>
+        {busy && <span className="spinner" aria-hidden />}
+        {busy ? "Saving…" : submitLabel}
       </button>
     </form>
   );

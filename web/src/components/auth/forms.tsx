@@ -14,10 +14,14 @@ function useSubmit() {
     setBusy(true);
     setError(null);
     const err = await fn();
-    setBusy(false);
-    if (err) setError(err);
+    // On success the page usually navigates away; staying busy until then
+    // keeps the spinner up. Forms that stay put clear it via `done`.
+    if (err) {
+      setBusy(false);
+      setError(err);
+    }
   }
-  return { error, busy, run, setError };
+  return { error, busy, run, setError, done: () => setBusy(false) };
 }
 
 export function LoginForm() {
@@ -70,6 +74,7 @@ export function LoginForm() {
         </button>
       )}
       <button className="btn primary lg" disabled={busy}>
+        {busy && <span className="spinner" aria-hidden />}
         {busy ? "Signing in…" : "Sign in"}
       </button>
       <p className="auth-sub">
@@ -110,6 +115,7 @@ export function SignupForm() {
       </label>
       {error && <p className="error">{error}</p>}
       <button className="btn primary lg" disabled={busy}>
+        {busy && <span className="spinner" aria-hidden />}
         {busy ? "Creating…" : "Create account"}
       </button>
       <p className="auth-sub">
@@ -126,7 +132,7 @@ const callback = (next: string) => `${window.location.origin}/auth/callback?next
 export function CheckEmail() {
   const params = useSearchParams();
   const email = params.get("email") ?? "";
-  const { error, busy, run } = useSubmit();
+  const { error, busy, run, done } = useSubmit();
   const [info, setInfo] = useState<string | null>(null);
   return (
     <>
@@ -145,6 +151,7 @@ export function CheckEmail() {
             const { error } = await createClient().auth.resend({ type: "signup", email, options: { emailRedirectTo: callback("/onboarding") } });
             if (error) return error.message;
             setInfo("Sent it again.");
+            done();
           })
         }
       >
@@ -159,7 +166,7 @@ export function CheckEmail() {
 
 export function ForgotForm() {
   const [sent, setSent] = useState(false);
-  const { error, busy, run } = useSubmit();
+  const { error, busy, run, done } = useSubmit();
   if (sent)
     return (
       <>
@@ -178,6 +185,7 @@ export function ForgotForm() {
           const { error } = await createClient().auth.resetPasswordForEmail(email, { redirectTo: callback("/reset") });
           if (error) return error.message;
           setSent(true);
+          done();
         });
       }}
     >
@@ -187,6 +195,7 @@ export function ForgotForm() {
       </label>
       {error && <p className="error">{error}</p>}
       <button className="btn primary lg" disabled={busy}>
+        {busy && <span className="spinner" aria-hidden />}
         Send a reset link
       </button>
       <p className="auth-sub">
@@ -217,6 +226,7 @@ export function NewPasswordForm() {
       </label>
       {error && <p className="error">{error}</p>}
       <button className="btn primary lg" disabled={busy}>
+        {busy && <span className="spinner" aria-hidden />}
         Save password
       </button>
     </form>
