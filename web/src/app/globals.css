@@ -477,7 +477,7 @@ html,body{overflow:hidden;height:100%;}
 .day.sel .dot-star{fill:var(--accent-ink);}
 .legend-star{width:10px;height:10px;fill:var(--paper-dim);}
 .dots{align-items:center;}
-.cal-legend{padding:0 6px 10px;flex-wrap:wrap;}
+.cal-legend{padding:2px 6px 16px;margin-bottom:6px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:12px 14px;}
 .pin{font:inherit;font-weight:700;color:var(--accent);}
 button.logo{color:inherit;}
 .req-note{margin:-6px 0 6px 68px;font-size:12px;font-weight:700;color:var(--accent);}
