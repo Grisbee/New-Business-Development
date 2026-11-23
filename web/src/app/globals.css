@@ -538,3 +538,5 @@ button.logo{color:inherit;}
 .fab{width:60px;height:60px;box-shadow:0 10px 28px rgba(201,59,99,.45),0 3px 8px rgba(0,0,0,.22);}
 .fab-menu{bottom:158px;}
 @media (min-width:1024px){.screen .fab-menu{bottom:100px;}}
+.hero-share{left:auto;right:14px;}
+.card-foot .chatbtn{width:34px;height:34px;flex-shrink:0;}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppShell";
+import { ShareButton } from "@/components/views/Lists";
 import { Ic } from "@/components/Icons";
 import { REPEAT_LABEL, goingText, fmtLong, fmtShort, imageUrl, initials, to12h } from "@/lib/format";
 import { nameOf, type PersonLite } from "@/lib/types";
@@ -282,6 +283,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             <button className="hero-back" aria-label="Back" onClick={onClose}>
               <Ic name="back" size={22} width={2.2} />
             </button>
+            <ShareButton e={e} className="hero-back hero-share" />
           </div>
         ) : (
           <div className="hero ph" style={{ background: thread?.color ?? "var(--ink-3)" }}>
@@ -289,6 +291,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             <button className="hero-back" aria-label="Back" onClick={onClose}>
               <Ic name="back" size={22} width={2.2} />
             </button>
+            <ShareButton e={e} className="hero-back hero-share" />
           </div>
         )}
         <div className="dbody">

@@ -173,19 +173,56 @@ export function Thumb({ e, cls }: { e: EventRow; cls: string }) {
 function ChatButton({ e }: { e: EventRow }) {
   const { data, openChat } = useApp();
   const unread = data.chats.get(`event:${e.id}`)?.unread ?? 0;
-  // Same size as the Going button next to it, with a label.
   return (
     <button
-      className="btn chat-btn"
+      className="chatbtn"
       aria-label="Open event chat"
       onClick={(ev) => {
         ev.stopPropagation();
         openChat({ type: "event", id: e.id });
       }}
     >
-      <Ic name="chat" size={14} width={2.2} />
-      Chat
+      <Ic name="chat" size={17} />
       {unread ? <span className="badge">{unread}</span> : null}
+    </button>
+  );
+}
+
+// Share an event: the phone's share sheet, or the link copied.
+export function useShareEvent() {
+  const { toast } = useApp();
+  return async (e: EventRow) => {
+    const url = `${window.location.origin}/?event=${e.id}`;
+    const text = `${e.title} · ${fmtShort(e.next_on)} ${to12h(e.starts_at)} · ${e.place}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: e.title, text, url });
+        return;
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("Link copied · paste it anywhere");
+    } catch {
+      toast(url);
+    }
+  };
+}
+
+export function ShareButton({ e, className = "chatbtn" }: { e: EventRow; className?: string }) {
+  const share = useShareEvent();
+  return (
+    <button
+      className={className}
+      aria-label={`Share ${e.title}`}
+      onClick={(ev) => {
+        ev.stopPropagation();
+        void share(e);
+      }}
+    >
+      <Ic name="share" size={17} />
     </button>
   );
 }
@@ -305,6 +342,7 @@ export function PublicView() {
               <span className="price">{priceLabel(e.price || (e.tickets.length ? Math.min(...e.tickets.map((t) => t.price)) : 0))}</span>
               <span className="muted">· {e.going_count} going</span>
               <span className="spacer" />
+              <ShareButton e={e} />
               <ActionButtons e={e} />
             </div>
           </article>
@@ -356,6 +394,7 @@ export function CommunityView() {
               </span>
               <span className="muted">{isFull(e) ? "Full" : goingText(e)}</span>
               <span className="spacer" />
+              <ShareButton e={e} />
               <ActionButtons e={e} />
             </div>
           </article>

@@ -46,8 +46,10 @@ export function LoginForm() {
             return "Confirm your email first: open the link we sent you.";
           }
           if (error) return error.message;
-          // Replaced, so Back doesn't return to the form.
-          window.location.replace("/");
+          // Replaced, so Back doesn't return to the form. `next` only ever
+          // points inside the app.
+          const next = params.get("next");
+          window.location.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : "/");
         });
       }}
     >

@@ -33,7 +33,9 @@ export async function updateSession(request: NextRequest) {
   if (!signedIn && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.search = "";
+    // A shared event link (/?event=…) opens after signing in.
+    const next = path + request.nextUrl.search;
+    url.search = next !== "/" ? `?next=${encodeURIComponent(next)}` : "";
     return NextResponse.redirect(url);
   }
   return response;
