@@ -185,7 +185,6 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
           role: (p.user_id === me.id ? "me" : "") as "me" | "",
         })),
     ];
-    const seedOthers = e.going_count - people.filter((p) => p.user_id !== e.host_id).length;
     section = (
       <div className="going-card">
         <h4 className="going-title">Who’s going · {goingText(e).replace(" going", "")}</h4>
@@ -198,7 +197,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
                 {p.role === "me" ? "ME" : initials(p.name)}
               </span>
             ))}
-            {list.length - 3 + Math.max(0, seedOthers) > 0 && <span className="faces-more">+{list.length - 3 + Math.max(0, seedOthers)}</span>}
+            {list.length > 3 && <span className="faces-more">+{list.length - 3}</span>}
           </span>
           <span className={`chev${showAll ? " up" : ""}`} aria-hidden>
             <Ic name="back" size={18} width={2.6} />
@@ -209,7 +208,6 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             {list.map((p, i) => (
               <Person key={i} p={p} host={i === 0} />
             ))}
-            {seedOthers > 0 && <div className="hint">and {seedOthers} more</div>}
           </div>
         </div>
       </div>

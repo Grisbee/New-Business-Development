@@ -189,7 +189,9 @@ async function seed() {
           JSON.stringify(tickets),
           pub ? null : e.max,
           e.img ? `demo:${e.img}` : null,
-          Math.max(0, (e.going ?? 0) - (pub ? 0 : 2)),
+          // Public events start with the mockup's big counts; community ones
+          // get real demo people below, so everyone going can be listed.
+          pub ? (e.going ?? 0) : 0,
         ],
       );
       eventIds[e.id] = r.rows[0].id;
@@ -206,6 +208,15 @@ async function seed() {
         const tier = M.DETAILS[e.id]?.tickets?.length ? 0 : null;
         await c.query("insert into public.going (event_id, user_id, tier) values ($1,$2,$3) on conflict do nothing", [eventIds[e.id], uid(m), tier]);
       }
+    }
+
+    // Fill community events up to the mockup's numbers with demo people.
+    const pool = [...names].filter((n) => n !== "demo" && !venues[n]);
+    for (const e of M.EVENTS.filter((x) => x.kind === "community")) {
+      const want = Math.min((e.going ?? 1) - 1, (e.max ?? 99) - 1);
+      const have = (await c.query("select count(*)::int n from public.going where event_id = $1", [eventIds[e.id]])).rows[0].n;
+      const extra = pool.filter((n) => n !== e.host).sort(() => Math.random() - 0.5).slice(0, Math.max(0, want - have));
+      for (const n of extra) await c.query("insert into public.going (event_id, user_id) values ($1,$2) on conflict do nothing", [eventIds[e.id], uid(n)]);
     }
 
     // Teams and the university calendar.

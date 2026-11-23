@@ -32,7 +32,8 @@ function MonthGrid({
 }: {
   selected: string;
   onSelect: (iso: string) => void;
-  dots: (iso: string) => { cls: string }[];
+  // `star`: an event you're going to, drawn as a little star.
+  dots: (iso: string) => { cls: string; star?: boolean }[];
   legend: React.ReactNode;
 }) {
   const { today } = useApp();
@@ -57,8 +58,8 @@ function MonthGrid({
             <Ic name="back" size={16} width={2.4} />
           </button>
         </b>
-        <div className="legend">{legend}</div>
       </div>
+      <div className="legend cal-legend">{legend}</div>
       <div className="cal-grid">
         {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
           <div key={i} className="cal-dow">
@@ -78,9 +79,15 @@ function MonthGrid({
             >
               {c.day}
               <span className="dots">
-                {ds.slice(0, 3).map((d, i) => (
-                  <i key={i} className={d.cls} />
-                ))}
+                {ds.slice(0, 3).map((d, i) =>
+                  d.star ? (
+                    <svg key={i} className={`dot-star ${d.cls}`} viewBox="0 0 24 24" aria-hidden>
+                      <path d="m12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" />
+                    </svg>
+                  ) : (
+                    <i key={i} className={d.cls} />
+                  ),
+                )}
               </span>
             </button>
           );
@@ -110,7 +117,7 @@ export function CalendarView() {
       <MonthGrid
         selected={ui.calDay}
         onSelect={(iso) => setUi((u) => ({ ...u, calDay: iso }))}
-        dots={(iso) => sorted.filter((e) => on(e, iso)).map((e) => ({ cls: `${e.kind}${isGoing(e.id) ? " going" : ""}` }))}
+        dots={(iso) => sorted.filter((e) => on(e, iso)).map((e) => ({ cls: e.kind, star: isGoing(e.id) }))}
         legend={
           <>
             <span>
@@ -120,6 +127,12 @@ export function CalendarView() {
             <span>
               <i className="kdot community" />
               Community
+            </span>
+            <span>
+              <svg className="dot-star legend-star" viewBox="0 0 24 24" aria-hidden>
+                <path d="m12 2.5 2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" />
+              </svg>
+              Going
             </span>
           </>
         }

@@ -470,3 +470,11 @@ html,body{overflow:hidden;height:100%;}
 @media (prefers-reduced-motion:reduce){.fold,.faces,.chev{transition:none;}}
 .detail-scrim{display:none;}
 @media (min-width:1024px){.detail-scrim{display:block;position:absolute;inset:0;background:rgba(0,0,0,.12);}}
+/* Calendar: events you're going to are little stars instead of dots */
+.dot-star{width:9px;height:9px;flex-shrink:0;fill:var(--paper);}
+.dot-star.public{fill:var(--venue);}
+.dot-star.community{fill:var(--community);}
+.day.sel .dot-star{fill:var(--accent-ink);}
+.legend-star{width:10px;height:10px;fill:var(--paper-dim);}
+.dots{align-items:center;}
+.cal-legend{padding:0 6px 10px;flex-wrap:wrap;}
