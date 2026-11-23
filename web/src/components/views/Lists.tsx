@@ -229,7 +229,14 @@ export function ShareButton({ e, className = "chatbtn", size = 17 }: { e: EventR
 export { ChatButton };
 
 export function ActionButtons({ e, compact }: { e: EventRow; compact?: boolean }) {
-  const { isGoing, isFull, toggleJoin, openDetail, data } = useApp();
+  const { isGoing, isFull, toggleJoin, openDetail, data, isPending } = useApp();
+  if (isPending(`join:${e.id}`))
+    return (
+      <button className="btn" disabled aria-busy>
+        <span className="spinner" aria-hidden />
+        {isGoing(e.id) || data.going.has(e.id) ? "Leaving…" : "Joining…"}
+      </button>
+    );
   const stop = (fn: () => void) => (ev: React.MouseEvent) => {
     ev.stopPropagation();
     fn();
@@ -425,7 +432,8 @@ export function lastMsgText(c: ChatSummary | undefined, myId: string, events: Ev
 }
 
 function ThreadRow({ t, mode }: { t: Thread; mode: "mine" | "all" }) {
-  const { data, me, openChat, toggleFollow } = useApp();
+  const { data, me, openChat, toggleFollow, isPending } = useApp();
+  const following = isPending(`follow:${t.id}`);
   const c = data.chats.get(`thread:${t.id}`);
   return (
     <button className="thread" onClick={() => openChat({ type: "thread", id: t.id })}>
@@ -447,12 +455,13 @@ function ThreadRow({ t, mode }: { t: Thread; mode: "mine" | "all" }) {
         </div>
       ) : (
         <span
-          className={`follow${t.followed ? " on" : ""}`}
+          className={`follow${t.followed ? " on" : ""}${following ? " busy" : ""}`}
           role="button"
+          aria-busy={following}
           tabIndex={0}
           onClick={(e) => {
             e.stopPropagation();
-            void toggleFollow(t.id);
+            if (!following) void toggleFollow(t.id);
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -462,7 +471,8 @@ function ThreadRow({ t, mode }: { t: Thread; mode: "mine" | "all" }) {
             }
           }}
         >
-          {t.followed ? "Following" : "Follow"}
+          {following ? <span className="spinner" aria-hidden /> : null}
+          {following ? (t.followed ? "Leaving" : "Following") : t.followed ? "Following" : "Follow"}
         </span>
       )}
     </button>

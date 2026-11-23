@@ -543,3 +543,10 @@ button.logo{color:inherit;}
 /* Totals next to a tab name: grey, unlike the pink unread badge */
 .badge.count{background:var(--ink-3);color:var(--paper);}
 .hero-share{width:46px;height:46px;top:12px;right:12px;}
+/* Buttons mid-action: spinner + label, slightly faded */
+.follow{display:inline-flex;align-items:center;gap:6px;}
+.follow .spinner,.btn .spinner{width:13px;height:13px;margin-right:0;border-width:2px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;}
+.follow.busy{opacity:.75;pointer-events:none;}
+.follow:disabled{opacity:.75;}
+a.create-row{text-decoration:none;}

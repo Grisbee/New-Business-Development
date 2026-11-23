@@ -10,7 +10,8 @@ import { nameOf, type PersonLite } from "@/lib/types";
 type Attendee = { user_id: string; status: string; person: PersonLite | null };
 
 export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
-  const { data, me, isGoing, isFull, toggleJoin, openChat, toast, confirm } = useApp();
+  const { data, me, isGoing, isFull, toggleJoin, openChat, toast, confirm, isPending } = useApp();
+  const joining = isPending(`join:${id}`);
   const e = data.events.find((x) => x.id === id);
   const [ticket, setTicket] = useState({ tier: 0, qty: 1 });
   const [people, setPeople] = useState<Attendee[]>([]);
@@ -106,8 +107,9 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             <b>{e.going_count} going</b>
           </span>
           {chatBtn}
-          <button className={`btn lg ${on ? "on" : "primary"}`} onClick={() => void toggleJoin(e)}>
-            {on ? "✓ Going" : "Join"}
+          <button className={`btn lg ${on ? "on" : "primary"}`} disabled={joining} aria-busy={joining} onClick={() => void toggleJoin(e)}>
+            {joining && <span className="spinner" aria-hidden />}
+            {joining ? (on ? "Leaving…" : "Joining…") : on ? "✓ Going" : "Join"}
           </button>
         </>
       );
@@ -176,8 +178,9 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             Total<b>NT${(price * ticket.qty).toLocaleString("en-US")}</b>
           </span>
           {chatBtn}
-          <button className="btn lg primary" disabled={busy || e.host_id === me.id} onClick={() => void buy()}>
-            Book {ticket.qty > 1 ? `${ticket.qty} tickets` : "ticket"}
+          <button className="btn lg primary" disabled={busy || e.host_id === me.id} aria-busy={busy} onClick={() => void buy()}>
+            {busy && <span className="spinner" aria-hidden />}
+            {busy ? "Booking…" : `Book ${ticket.qty > 1 ? `${ticket.qty} tickets` : "ticket"}`}
           </button>
         </>
       );
@@ -234,8 +237,13 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
           <b>{full ? "Waitlist open" : left}</b>
         </span>
         {chatBtn}
-        <button className={`btn lg ${on ? "on" : full || waiting || asked ? "" : "primary"}`} onClick={() => void toggleJoin(e)}>
-          {e.host_id === me.id
+        <button className={`btn lg ${on ? "on" : full || waiting || asked ? "" : "primary"}`} disabled={joining} aria-busy={joining} onClick={() => void toggleJoin(e)}>
+          {joining && <span className="spinner" aria-hidden />}
+          {joining
+            ? on || waiting || asked
+              ? "Leaving…"
+              : "Joining…"
+            : e.host_id === me.id
             ? "You’re hosting"
             : on
               ? "✓ Going"

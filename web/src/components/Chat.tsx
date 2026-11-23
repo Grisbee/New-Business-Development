@@ -14,7 +14,7 @@ const colorFor = (n: string) => USER_COLORS[[...n].reduce((a, c) => a + c.charCo
 const column = (t: ChatRef["type"]) => (t === "thread" ? "thread_id" : t === "event" ? "event_id" : "team_id");
 
 export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; initialTab: string; onClose: () => void }) {
-  const { data, me, toast, toggleFollow, openSheet } = useApp();
+  const { data, me, toast, toggleFollow, openSheet, isPending } = useApp();
   const [msgs, setMsgs] = useState<Message[]>([]);
   // Signed links for the photos in this chat (the bucket is private).
   const [photoUrls, setPhotoUrls] = useState<Map<string, string>>(new Map());
@@ -163,7 +163,8 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
           <b>{t.name}</b>
           <span>{t.members.toLocaleString("en-US")} members</span>
         </div>
-        <button className={`follow${t.followed ? " on" : ""}`} onClick={() => void toggleFollow(t.id)}>
+        <button className={`follow${t.followed ? " on" : ""}`} disabled={isPending(`follow:${t.id}`)} aria-busy={isPending(`follow:${t.id}`)} onClick={() => void toggleFollow(t.id)}>
+          {isPending(`follow:${t.id}`) && <span className="spinner" aria-hidden />}
           {t.followed ? "Following" : "Follow"}
         </button>
       </>
@@ -214,8 +215,9 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
     foot = !t.followed ? (
       <div className="join-bar">
         <span style={{ flex: 1 }}>Follow this community to join the chat.</span>
-        <button className="btn primary" onClick={() => void toggleFollow(t.id)}>
-          Follow
+        <button className="btn primary" disabled={isPending(`follow:${t.id}`)} aria-busy={isPending(`follow:${t.id}`)} onClick={() => void toggleFollow(t.id)}>
+          {isPending(`follow:${t.id}`) && <span className="spinner" aria-hidden />}
+          {isPending(`follow:${t.id}`) ? "Following…" : "Follow"}
         </button>
       </div>
     ) : tab === "chat" ? (
@@ -495,7 +497,7 @@ function Bubbles({ msgs, photoUrls, hostId, onFile }: { msgs: Message[]; photoUr
 }
 
 function EventCard({ id }: { id: string }) {
-  const { data, isGoing, isFull, toggleJoin, openDetail, openChat } = useApp();
+  const { data, isGoing, isFull, toggleJoin, openDetail, openChat, isPending } = useApp();
   const e = data.events.find((x) => x.id === id);
   if (!e) return <div className="evmsg"><div className="evlabel">Event no longer available</div></div>;
   const on = isGoing(id);
@@ -532,12 +534,15 @@ function EventCard({ id }: { id: string }) {
         ) : (
           <button
             className={`btn ${full ? "" : "primary"}`}
+            disabled={isPending(`join:${id}`)}
+            aria-busy={isPending(`join:${id}`)}
             onClick={(ev) => {
               ev.stopPropagation();
               void toggleJoin(e);
             }}
           >
-            {full ? "Waitlist" : "Join"}
+            {isPending(`join:${id}`) && <span className="spinner" aria-hidden />}
+            {isPending(`join:${id}`) ? "Joining…" : full ? "Waitlist" : "Join"}
           </button>
         )}
       </div>

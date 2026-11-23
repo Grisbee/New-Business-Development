@@ -42,6 +42,7 @@ export type UiState = {
 };
 
 type Ctx = {
+  isPending: (key: string) => boolean;
   confirm: (d: { title: string; body: string; ok: string; danger?: boolean }) => Promise<boolean>;
   me: Profile;
   data: AppData;
@@ -178,6 +179,19 @@ export function AppShell({ me }: { me: Profile }) {
     [isGoing],
   );
 
+  // Actions in flight ("join:<event>", "follow:<thread>"): their buttons
+  // show a spinner and can't be pressed twice.
+  const [pending, setPending] = useState<Set<string>>(new Set());
+  const busy = useCallback((key: string, on: boolean) => {
+    setPending((s) => {
+      const next = new Set(s);
+      if (on) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }, []);
+  const isPending = useCallback((key: string) => pending.has(key), [pending]);
+
   const toggleJoin = useCallback(
     async (e: EventRow) => {
       const mine = data.going.get(e.id);
@@ -215,38 +229,48 @@ export function AppShell({ me }: { me: Profile }) {
               },
       );
       if (!yes) return;
-      if (mine) {
-        const { error } = await data.supabase.from("going").delete().eq("event_id", e.id).eq("user_id", me.id);
-        if (error) return toast(`Couldn’t leave: ${error.message}`);
-        toast(mine.status === "requested" ? "Request cancelled" : mine.status === "waitlist" ? "You left the waitlist" : "You left this event");
-      } else {
-        const { data: row, error } = await data.supabase.from("going").insert({ event_id: e.id }).select("status").single();
-        if (error) return toast(`Couldn’t join: ${error.message}`);
-        toast(
-          row.status === "requested"
-            ? "Request sent · the host will answer"
-            : row.status === "waitlist"
-              ? "Added to the waitlist"
-              : "You’re going · group chat is in My events",
-        );
+      busy(`join:${e.id}`, true);
+      try {
+        if (mine) {
+          const { error } = await data.supabase.from("going").delete().eq("event_id", e.id).eq("user_id", me.id);
+          if (error) return toast(`Couldn’t leave: ${error.message}`);
+          toast(mine.status === "requested" ? "Request cancelled" : mine.status === "waitlist" ? "You left the waitlist" : "You left this event");
+        } else {
+          const { data: row, error } = await data.supabase.from("going").insert({ event_id: e.id }).select("status").single();
+          if (error) return toast(`Couldn’t join: ${error.message}`);
+          toast(
+            row.status === "requested"
+              ? "Request sent · the host will answer"
+              : row.status === "waitlist"
+                ? "Added to the waitlist"
+                : "You’re going · group chat is in My events",
+          );
+        }
+        await Promise.all([data.loadGoing(), data.loadEvents(), data.loadChats()]);
+      } finally {
+        busy(`join:${e.id}`, false);
       }
-      await Promise.all([data.loadGoing(), data.loadEvents(), data.loadChats()]);
     },
-    [data, me.id, toast, confirm, isFull],
+    [data, me.id, toast, confirm, isFull, busy],
   );
 
   const toggleFollow = useCallback(
     async (threadId: string) => {
       const t = data.threads.find((x) => x.id === threadId);
       if (!t) return;
-      const { error } = t.followed
-        ? await data.supabase.from("follows").delete().eq("thread_id", threadId).eq("user_id", me.id)
-        : await data.supabase.from("follows").insert({ thread_id: threadId });
-      if (error) return toast(`Couldn’t update: ${error.message}`);
-      toast(t.followed ? `Unfollowed ${t.name}` : "Added to My threads");
-      await Promise.all([data.loadThreads(), data.loadChats()]);
+      busy(`follow:${threadId}`, true);
+      try {
+        const { error } = t.followed
+          ? await data.supabase.from("follows").delete().eq("thread_id", threadId).eq("user_id", me.id)
+          : await data.supabase.from("follows").insert({ thread_id: threadId });
+        if (error) return toast(`Couldn’t update: ${error.message}`);
+        toast(t.followed ? `Unfollowed ${t.name}` : "Added to My threads");
+        await Promise.all([data.loadThreads(), data.loadChats()]);
+      } finally {
+        busy(`follow:${threadId}`, false);
+      }
     },
-    [data, me.id, toast],
+    [data, me.id, toast, busy],
   );
 
   const setMode = (next: boolean) => {
@@ -260,6 +284,7 @@ export function AppShell({ me }: { me: Profile }) {
   };
 
   const ctx: Ctx = {
+    isPending,
     confirm,
     me,
     data,
