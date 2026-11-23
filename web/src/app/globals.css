@@ -534,3 +534,7 @@ button.logo{color:inherit;}
   .screen .list:not(.rows)>.card{height:100%;}
   .card .card-foot{margin-top:auto;}
 }
+/* A bigger + with a deeper shadow, so it stands out over busy lists */
+.fab{width:60px;height:60px;box-shadow:0 10px 28px rgba(201,59,99,.45),0 3px 8px rgba(0,0,0,.22);}
+.fab-menu{bottom:158px;}
+@media (min-width:1024px){.screen .fab-menu{bottom:100px;}}

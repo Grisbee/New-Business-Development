@@ -139,6 +139,18 @@ export function AppShell({ me }: { me: Profile }) {
   }, []);
 
   const toast = useCallback((text: string) => setToastMsg((t) => ({ text, n: (t?.n ?? 0) + 1 })), []);
+  // Someone moving over from Sidequest: their old events and chats come
+  // with them on first load (matched by email, see claim_imported_account).
+  useEffect(() => {
+    void data.supabase.rpc("claim_imported_account").then(({ data: claimed }) => {
+      if (claimed) {
+        toast("Welcome over from Sidequest · your events and chats are here");
+        void data.reloadAll();
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per load
+  }, []);
+
   useEffect(() => {
     if (!toastMsg) return;
     const id = setTimeout(() => setToastMsg(null), 1900);

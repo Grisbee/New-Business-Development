@@ -7,6 +7,7 @@ export default function SignupPage() {
   return (
     <AuthCard title="Create an account" sub="We’ll email you a link to confirm it.">
       <SignupForm />
+      <p className="auth-sub">Had an account on Sidequest? Sign up with the same email and your events and chats come along.</p>
     </AuthCard>
   );
 }
