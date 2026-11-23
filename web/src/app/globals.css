@@ -461,3 +461,5 @@ html,body{overflow:hidden;height:100%;}
 .faces{display:flex;align-items:center;padding:4px 0 2px 4px;}
 .faces .avatar{width:32px;height:32px;margin-left:-6px;box-shadow:0 0 0 2px var(--ink);font-size:10.5px;}
 .faces-more{margin-left:8px;font-size:12.5px;font-weight:700;color:var(--paper-dim);}
+.detail-scrim{display:none;}
+@media (min-width:1024px){.detail-scrim{display:block;position:absolute;inset:0;background:rgba(0,0,0,.12);}}
