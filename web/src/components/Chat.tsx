@@ -217,6 +217,11 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
           <b>{t.name}</b>
           <span>{t.members.toLocaleString("en-US")} members</span>
         </div>
+        {(t.created_by === me.id || me.role === "admin") && (
+          <a className="icon-btn" href={`/new-thread?edit=${t.id}`} aria-label="Edit thread" title="Edit thread">
+            <Ic name="pen" size={18} />
+          </a>
+        )}
         <button className={`follow${t.followed ? " on" : ""}`} disabled={isPending(`follow:${t.id}`)} aria-busy={isPending(`follow:${t.id}`)} onClick={() => void toggleFollow(t.id)}>
           {isPending(`follow:${t.id}`) && <span className="spinner" aria-hidden />}
           {t.followed ? "Following" : "Follow"}

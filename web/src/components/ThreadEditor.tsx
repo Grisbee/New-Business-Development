@@ -6,16 +6,19 @@ import { createClient } from "@/lib/supabase/client";
 import { Ic } from "@/components/Icons";
 import { TAGS } from "@/components/views/Lists";
 
-const ICONS = ["users", "fish", "wave", "mountain", "run", "music", "moon", "bowl", "plane", "film", "palette", "lang", "game", "code", "leaf", "paw", "camera", "bulb"];
+const ICONS = ["users", "party", "beer", "fish", "wave", "mountain", "run", "music", "moon", "bowl", "plane", "film", "palette", "lang", "game", "code", "leaf", "paw", "camera", "bulb"];
 const COLORS = ["#8FC1E3", "#E8A0BF", "#F0C987", "#B8D8A8", "#C9B6F2", "#F2A488", "#7FD1C1", "#A8D8EA", "#FFD6A5", "#CDB4DB"];
 
 // Start a community thread: name, topic tag, icon and colour. The creator
 // follows it straight away (create_thread).
-export function ThreadEditor() {
-  const [tag, setTag] = useState(TAGS.threads[0]);
-  const [icon, setIcon] = useState("users");
-  const [color, setColor] = useState(COLORS[0]);
-  const [name, setName] = useState("");
+export type EditableThread = { id: string; name: string; tag: string; icon: string; color: string };
+
+// `initial` = editing that thread; otherwise a new one.
+export function ThreadEditor({ initial }: { initial?: EditableThread }) {
+  const [tag, setTag] = useState(initial?.tag ?? TAGS.threads[0]);
+  const [icon, setIcon] = useState(initial?.icon ?? "users");
+  const [color, setColor] = useState(initial?.color ?? COLORS[0]);
+  const [name, setName] = useState(initial?.name ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,6 +26,20 @@ export function ThreadEditor() {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    if (initial) {
+      const { error } = await createClient()
+        .from("threads")
+        .update({ name: name.trim(), tag, icon, color })
+        .eq("id", initial.id)
+        .select("id")
+        .single();
+      if (error) {
+        setBusy(false);
+        return setError(error.code === "23505" ? "A thread with that name already exists." : error.message);
+      }
+      window.location.replace(`/?thread=${initial.id}#threads`);
+      return;
+    }
     const { data, error } = await createClient().rpc("create_thread", { p_name: name, p_tag: tag, p_icon: icon, p_color: color });
     if (error) {
       setBusy(false);
@@ -34,10 +51,10 @@ export function ThreadEditor() {
   return (
     <div className="screen auth-screen">
       <header className="topbar">
-        <Link href="/#threads" className="icon-btn" aria-label="Back">
+        <Link href={initial ? `/?thread=${initial.id}#threads` : "/#threads"} className="icon-btn" aria-label="Back">
           <Ic name="back" size={22} width={2.2} />
         </Link>
-        <b className="editor-title">New thread</b>
+        <b className="editor-title">{initial ? "Edit thread" : "New thread"}</b>
       </header>
       <main className="view">
         <form className="auth editor" onSubmit={save}>
@@ -94,7 +111,7 @@ export function ThreadEditor() {
           {error && <p className="error">{error}</p>}
           <button className="btn primary lg" disabled={busy}>
             {busy && <span className="spinner" aria-hidden />}
-            {busy ? "Creating…" : "Create thread"}
+            {busy ? (initial ? "Saving…" : "Creating…") : initial ? "Save changes" : "Create thread"}
           </button>
         </form>
       </main>

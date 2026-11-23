@@ -10,8 +10,8 @@ import { nameOf, type ChatSummary, type EventRow, type Thread } from "@/lib/type
 // Threads: what a community is about.
 export const TAGS = {
   public: ["Clubs", "Live Music", "Bars", "Food", "Festivals", "Arts", "Workshops", "Markets", "Sports"],
-  community: ["Sports", "Outdoors", "Trips", "Food", "Nightlife", "Culture", "Language", "Games", "Study", "Other"],
-  threads: ["Outdoors", "Sports", "Music", "Nightlife", "Food", "Travel", "Culture", "Art", "Language", "Gaming", "Tech", "Study", "Wellness", "Pets", "Housing", "Volunteering"],
+  community: ["Social", "Sports", "Outdoors", "Trips", "Food", "Nightlife", "Culture", "Language", "Games", "Study", "Other"],
+  threads: ["Social", "Outdoors", "Sports", "Music", "Nightlife", "Food", "Travel", "Culture", "Art", "Language", "Gaming", "Tech", "Study", "Wellness", "Pets", "Housing", "Volunteering"],
 };
 
 // The community tag an event gets by default when posted in a thread.

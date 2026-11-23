@@ -62,7 +62,7 @@ export function useAppData(me: Profile) {
 
   const loadThreads = useCallback(async () => {
     const [t, s, f] = await Promise.all([
-      supabase.from("threads").select("id, name, icon, color, tag").order("name"),
+      supabase.from("threads").select("id, name, icon, color, tag, created_by").order("name"),
       supabase.rpc("thread_stats"),
       supabase.from("follows").select("thread_id").eq("user_id", me.id),
     ]);

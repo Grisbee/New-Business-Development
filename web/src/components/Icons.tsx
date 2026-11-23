@@ -1,5 +1,7 @@
 // Icon paths from the mockup (24×24, stroked). <Ic name size width /> draws one.
 const ICONS: Record<string, string> = {
+  party:'<path d="M4 21 9.5 7.5l7 7z"/><path d="M14 4.5c1 .8 1.2 2.1.4 3.1M19.5 10c-.8-1-2.1-1.2-3.1-.4"/><path d="M16 3v1M21 8h-1M18.5 5.5l-.7.7"/><circle cx="12" cy="3" r=".6" fill="currentColor"/><circle cx="21" cy="12" r=".6" fill="currentColor"/>',
+  beer:'<path d="M5 8h10v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M15 10h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M5 8a2.5 2.5 0 0 1 2.5-3.5A3 3 0 0 1 13 4a2.5 2.5 0 0 1 2 4"/><path d="M8.5 12v5M11.5 12v5"/>',
   trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
   sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   share:'<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/>',

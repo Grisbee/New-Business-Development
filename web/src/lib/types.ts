@@ -56,6 +56,7 @@ export type GoingRow = { event_id: string; status: "going" | "waitlist" | "reque
 
 export type Thread = {
   id: string;
+  created_by: string | null;
   name: string;
   icon: string;
   color: string;
