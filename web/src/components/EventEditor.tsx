@@ -9,7 +9,7 @@ import { todayIso } from "@/lib/format";
 import type { Profile, Repeat, Ticket } from "@/lib/types";
 
 // The host counts as one of them.
-const SPOTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 40, 50, 75, 100];
+const SPOTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20, 25, 30, 40, 50, 75, 100];
 
 type ThreadLite = { id: string; name: string; tag: string; color: string; icon: string };
 
