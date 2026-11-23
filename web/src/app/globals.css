@@ -522,3 +522,15 @@ button.logo{color:inherit;}
 .host-actions{display:flex;gap:8px;flex-wrap:wrap;}
 .host-actions .btn{display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
 .btn.danger-outline{background:transparent;border:1px solid var(--deadline);color:var(--deadline);}
+
+/* Cards keep one height: the footer never wraps (the going count shrinks
+   instead), and in the desktop grid cards in a row stretch to match. */
+.card-foot{flex-wrap:nowrap;min-width:0;}
+.card-foot .muted{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.card-foot .btn{flex-shrink:0;}
+.card-foot .chat-btn{padding:8px 12px;}
+@media (min-width:1024px){
+  .screen .list:not(.rows){align-items:stretch;}
+  .screen .list:not(.rows)>.card{height:100%;}
+  .card .card-foot{margin-top:auto;}
+}
