@@ -372,6 +372,7 @@ export function lastMsgText(c: ChatSummary | undefined, myId: string, events: Ev
   let what: string;
   if (c.last_kind === "event") what = `posted an event · ${events.find((e) => e.id === c.last_ref_event)?.title ?? "an event"}`;
   else if (c.last_kind === "file") what = `shared ${c.last_file?.name ?? "a file"}`;
+  else if (c.last_kind === "image") what = "sent a photo 📷";
   else if (c.last_kind === "deadline") what = `added a deadline · ${(c.last_ref_item && itemTitle?.(c.last_ref_item)) ?? "a deadline"}`;
   else what = c.last_body ?? "";
   return (

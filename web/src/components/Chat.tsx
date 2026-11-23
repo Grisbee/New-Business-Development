@@ -16,6 +16,9 @@ const column = (t: ChatRef["type"]) => (t === "thread" ? "thread_id" : t === "ev
 export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; initialTab: string; onClose: () => void }) {
   const { data, me, toast, toggleFollow, openSheet } = useApp();
   const [msgs, setMsgs] = useState<Message[]>([]);
+  // Signed links for the photos in this chat (the bucket is private).
+  const [photoUrls, setPhotoUrls] = useState<Map<string, string>>(new Map());
+  const [sendingPhoto, setSendingPhoto] = useState(false);
   const [tab, setTab] = useState(initialTab);
   const [text, setText] = useState("");
   const msgsRef = useRef<HTMLDivElement>(null);
@@ -31,7 +34,15 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) return toast(`Couldn’t load the chat: ${error.message}`);
-    setMsgs(((rows ?? []) as unknown as Message[]).reverse());
+    const list = ((rows ?? []) as unknown as Message[]).reverse();
+    setMsgs(list);
+    const paths = list.filter((m) => m.kind === "image" && m.file).map((m) => m.file!.path);
+    if (paths.length) {
+      const { data: signed } = await data.supabase.storage.from("chat-images").createSignedUrls(paths, 3600);
+      const urls = new Map<string, string>();
+      (signed ?? []).forEach((x) => x.path && x.signedUrl && urls.set(x.path, x.signedUrl));
+      setPhotoUrls(urls);
+    }
   }, [data.supabase, col, chatRef.id, toast]);
 
   useEffect(() => {
@@ -81,6 +92,24 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
     await load();
   }
 
+  async function sendPhoto(file: File) {
+    if (!file.type.startsWith("image/")) return toast("Pick a photo");
+    if (file.size > 10 * 1024 * 1024) return toast("Photos up to 10 MB");
+    setSendingPhoto(true);
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 4);
+    const path = `${chatRef.type}/${chatRef.id}/${crypto.randomUUID()}.${ext}`;
+    const up = await data.supabase.storage.from("chat-images").upload(path, file, { contentType: file.type });
+    if (up.error) {
+      setSendingPhoto(false);
+      return toast(`Upload failed: ${up.error.message}`);
+    }
+    const size = file.size > 1048576 ? `${(file.size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(file.size / 1024))} KB`;
+    const { error } = await data.supabase.from("messages").insert({ [col]: chatRef.id, kind: "image", file: { name: file.name, ext, size, path } });
+    setSendingPhoto(false);
+    if (error) return toast(`Not sent: ${error.message}`);
+    await load();
+  }
+
   async function openFile(f: FileInfo) {
     const { data: signed, error } = await data.supabase.storage.from("team-files").createSignedUrl(f.path, 300);
     if (error || !signed) return toast("Couldn’t open the file");
@@ -91,7 +120,30 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
   let extra: React.ReactNode = null;
   let body: React.ReactNode;
   let foot: React.ReactNode = null;
-  const bubbles = <Bubbles msgs={msgs} hostId={chatRef.type === "event" ? data.events.find((e) => e.id === chatRef.id)?.host_id : undefined} onFile={openFile} />;
+  const bubbles = (
+    <Bubbles
+      msgs={msgs}
+      photoUrls={photoUrls}
+      hostId={chatRef.type === "event" ? data.events.find((e) => e.id === chatRef.id)?.host_id : undefined}
+      onFile={openFile}
+    />
+  );
+  const photoBtn = (
+    <label className={`plusbtn${sendingPhoto ? " busy" : ""}`} aria-label="Send a photo" style={{ cursor: "pointer" }}>
+      {sendingPhoto ? <span className="spinner" style={{ margin: 0 }} aria-hidden /> : <Ic name="camera" size={19} />}
+      <input
+        type="file"
+        accept="image/*"
+        hidden
+        disabled={sendingPhoto}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void sendPhoto(f);
+        }}
+      />
+    </label>
+  );
   const msgList = (
     <div className="msgs" id="msgs" ref={msgsRef}>
       {msgs.length === 0 ? <div className="daysep">NO MESSAGES YET</div> : bubbles}
@@ -173,9 +225,12 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
         setText={setText}
         onSubmit={send}
         before={
-          <a className="plusbtn" aria-label="Create an event" href={`/new-event?kind=community&thread=${t.id}`}>
-            <Ic name="calendar" size={19} />
-          </a>
+          <>
+            {photoBtn}
+            <a className="plusbtn" aria-label="Create an event" href={`/new-event?kind=community&thread=${t.id}`}>
+              <Ic name="calendar" size={19} />
+            </a>
+          </>
         }
       />
     ) : null;
@@ -262,6 +317,7 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
           onSubmit={send}
           before={
             <>
+              {photoBtn}
               <label className="plusbtn" aria-label="Attach a file" style={{ cursor: "pointer" }}>
                 <Ic name="clip" size={19} />
                 <input
@@ -296,7 +352,7 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
       </>
     );
     body = msgList;
-    foot = <Composer name="the group" text={text} setText={setText} onSubmit={send} />;
+    foot = <Composer name="the group" text={text} setText={setText} onSubmit={send} before={photoBtn} />;
   }
 
   return (
@@ -338,7 +394,7 @@ function Composer({
   );
 }
 
-function Bubbles({ msgs, hostId, onFile }: { msgs: Message[]; hostId?: string; onFile: (f: FileInfo) => void }) {
+function Bubbles({ msgs, photoUrls, hostId, onFile }: { msgs: Message[]; photoUrls: Map<string, string>; hostId?: string; onFile: (f: FileInfo) => void }) {
   const { me } = useApp();
   const dayOf = (ts: string) => new Date(ts).toDateString();
   return (
@@ -368,6 +424,29 @@ function Bubbles({ msgs, hostId, onFile }: { msgs: Message[]; hostId?: string; o
                 </span>
               </span>
             </button>
+          ) : m.kind === "image" && m.file ? (
+            <a className="imgmsg" href={photoUrls.get(m.file.path)} target="_blank" rel="noopener noreferrer">
+              {photoUrls.get(m.file.path) ? (
+                // eslint-disable-next-line @next/next/no-img-element -- signed storage link
+                <img
+                  src={photoUrls.get(m.file.path)}
+                  alt={`Photo from ${mine ? "you" : name}`}
+                  // Photos load after the scroll to the bottom; keep the end in view.
+                  onLoad={(ev) => {
+                    const box = ev.currentTarget.closest(".msgs");
+                    if (box) box.scrollTop = box.scrollHeight;
+                  }}
+                />
+              ) : (
+                <span className="imgmsg-ph">Photo</span>
+              )}
+              {!mine && (
+                <span className="who" style={{ color }}>
+                  {name}
+                </span>
+              )}
+              <span className="t">{chatTime(m.created_at)}</span>
+            </a>
           ) : m.kind === "deadline" && m.ref_item ? (
             <DeadlineCard id={m.ref_item} />
           ) : null;

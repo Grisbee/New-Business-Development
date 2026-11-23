@@ -96,7 +96,7 @@ export type Message = {
   event_id: string | null;
   team_id: string | null;
   user_id: string;
-  kind: "text" | "event" | "file" | "deadline";
+  kind: "text" | "event" | "file" | "deadline" | "image";
   body: string | null;
   ref_event: string | null;
   ref_item: string | null;
