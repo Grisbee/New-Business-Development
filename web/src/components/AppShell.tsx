@@ -215,6 +215,7 @@ export function AppShell({ me }: { me: Profile }) {
     setChat(null);
     setDetail(null);
     setSheet(null);
+    setFabMenu(false);
     setTab(next ? "teams" : "community");
     toast(next ? "University mode" : "City mode");
   };
@@ -247,25 +248,30 @@ export function AppShell({ me }: { me: Profile }) {
   }, [data.chats]);
 
   const isVenue = me.role === "venue" || me.role === "admin";
-  const fabShown = !uni || tab === "ucal";
   // In the city the + opens a small menu; the editors are separate pages, so
   // the + spins until the chosen one opens.
   const [fabMenu, setFabMenu] = useState(false);
   const [fabBusy, setFabBusy] = useState(false);
-  const fabItems = [
-    { href: "/new-event?kind=community", label: "Add community event", icon: "users" },
-    { href: "/new-thread", label: "Add thread", icon: "chat" },
-    ...(isVenue ? [{ href: "/new-event?kind=public", label: "Add public event", icon: "ticket" }] : []),
-  ];
+  // Pages (href) or sheets in this screen (sheet).
+  const fabItems: { key: string; label: string; icon: string; href?: string; sheet?: SheetState }[] = uni
+    ? [
+        { key: "team", label: "Add team", icon: "users", sheet: { kind: "team" } },
+        { key: "cal", label: "Add to calendar", icon: "calendar", sheet: { kind: "cal", type: "exam" } },
+      ]
+    : [
+        { key: "community", label: "Add community event", icon: "users", href: "/new-event?kind=community" },
+        { key: "thread", label: "Add thread", icon: "chat", href: "/new-thread" },
+        ...(isVenue ? [{ key: "public", label: "Add public event", icon: "ticket", href: "/new-event?kind=public" }] : []),
+      ];
   const onFab = () => {
     if (fabBusy) return;
-    if (tab === "ucal") return setSheet({ kind: "cal", type: "exam" });
     setFabMenu((m) => !m);
   };
-  const go = (href: string) => {
+  const go = (item: (typeof fabItems)[number]) => {
     setFabMenu(false);
+    if (item.sheet) return setSheet(item.sheet);
     setFabBusy(true);
-    router.push(href);
+    router.push(item.href!);
   };
 
   const views: Record<Tab, React.ReactNode> = {
@@ -311,7 +317,7 @@ export function AppShell({ me }: { me: Profile }) {
         {fabMenu && <div className="fab-scrim" onClick={() => setFabMenu(false)} />}
         <div className={`fab-menu${fabMenu ? " open" : ""}`} aria-hidden={!fabMenu}>
           {fabItems.map((item, i) => (
-            <button key={item.href} tabIndex={fabMenu ? 0 : -1} style={{ transitionDelay: fabMenu ? `${40 + i * 40}ms` : "0ms" }} onClick={() => go(item.href)}>
+            <button key={item.key} tabIndex={fabMenu ? 0 : -1} style={{ transitionDelay: fabMenu ? `${40 + i * 40}ms` : "0ms" }} onClick={() => go(item)}>
               <span className="fab-menu-ic">
                 <Ic name={item.icon} size={17} />
               </span>
@@ -322,9 +328,8 @@ export function AppShell({ me }: { me: Profile }) {
         <button
           className={`fab${fabBusy ? " busy" : ""}${fabMenu ? " open" : ""}`}
           aria-label="Create"
-          aria-expanded={tab === "ucal" ? undefined : fabMenu}
+          aria-expanded={fabMenu}
           aria-busy={fabBusy}
-          hidden={!fabShown}
           onClick={onFab}
         >
           {fabBusy ? <span className="spinner fab-spinner" aria-hidden /> : <Ic name="plus" size={24} width={2.6} />}
