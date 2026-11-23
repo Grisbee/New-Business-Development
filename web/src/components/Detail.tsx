@@ -186,36 +186,32 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
         })),
     ];
     const seedOthers = e.going_count - people.filter((p) => p.user_id !== e.host_id).length;
-    // Faces past the first six, plus people counted but not listed (demo data).
-    const hiddenCount = Math.max(0, list.length - 7) + Math.max(0, seedOthers);
     section = (
       <div className="going-card">
-        <button className="going-head" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
-          <h4>Who’s going · {goingText(e).replace(" going", "")}</h4>
-          <span className={`chev${showAll ? " up" : ""}`} aria-hidden>
-            <Ic name="back" size={18} width={2.6} />
-          </span>
-        </button>
-        {/* The host is always shown; the rest fold into a row of faces. */}
-        <Person p={list[0]} host />
-        <div className={`fold${showAll ? " open" : ""}`}>
-          <div className="fold-inner">
-            {list.slice(1).map((p, i) => (
-              <Person key={i} p={p} />
-            ))}
-            {seedOthers > 0 && <div className="hint">and {seedOthers} more</div>}
-          </div>
-        </div>
-        {(list.length > 1 || hiddenCount > 0) && (
-          <button className={`faces${showAll ? " hidden" : ""}`} onClick={() => setShowAll(true)} aria-label="Show everyone going" tabIndex={showAll ? -1 : 0}>
-            {list.slice(1, 7).map((p, i) => (
+        <h4 className="going-title">Who’s going · {goingText(e).replace(" going", "")}</h4>
+        {/* Folded: three faces and the arrow on one line. Open: everyone,
+            the host first. */}
+        <button className="going-row" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)} aria-label={showAll ? "Hide who’s going" : "Show who’s going"}>
+          <span className="faces">
+            {list.slice(0, 3).map((p, i) => (
               <span key={i} className="avatar" style={{ background: p.role === "me" ? "var(--accent)" : p.color }}>
                 {p.role === "me" ? "ME" : initials(p.name)}
               </span>
             ))}
-            {hiddenCount > 0 && <span className="faces-more">+{hiddenCount}</span>}
-          </button>
-        )}
+            {list.length - 3 + Math.max(0, seedOthers) > 0 && <span className="faces-more">+{list.length - 3 + Math.max(0, seedOthers)}</span>}
+          </span>
+          <span className={`chev${showAll ? " up" : ""}`} aria-hidden>
+            <Ic name="back" size={18} width={2.6} />
+          </span>
+        </button>
+        <div className={`fold${showAll ? " open" : ""}`}>
+          <div className="fold-inner">
+            {list.map((p, i) => (
+              <Person key={i} p={p} host={i === 0} />
+            ))}
+            {seedOthers > 0 && <div className="hint">and {seedOthers} more</div>}
+          </div>
+        </div>
       </div>
     );
     const left = max === null ? "Unlimited" : max - count;

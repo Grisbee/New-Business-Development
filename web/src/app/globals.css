@@ -454,18 +454,18 @@ html,body{overflow:hidden;height:100%;}
 @keyframes cal-prev{from{opacity:0;transform:translateX(-28px);}to{opacity:1;transform:none;}}
 @media (prefers-reduced-motion:reduce){.cal-slide-next,.cal-slide-prev{animation:none;}}
 
-/* Who's going: a card, folded to the host and a row of faces */
-.going-card{display:flex;flex-direction:column;padding:6px 14px 12px;border-radius:16px;background:var(--ink-2);}
-.going-head{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 0 2px;text-align:left;}
-.going-head h4{margin:0;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--paper-faint);}
+/* Who's going: a card with three faces and an arrow; opens to everyone */
+.going-card{display:flex;flex-direction:column;padding:12px 14px;border-radius:16px;background:var(--ink-2);}
+.going-title{margin:0;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--paper-faint);}
+.going-row{display:flex;align-items:center;justify-content:space-between;width:100%;padding-top:10px;}
 .chev{width:30px;height:30px;border-radius:50%;background:var(--ink-3);color:var(--paper);display:flex;align-items:center;justify-content:center;transform:rotate(-90deg);transition:transform .25s ease;}
 .chev.up{transform:rotate(90deg);}
 .fold{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease;}
 .fold.open{grid-template-rows:1fr;}
 .fold-inner{overflow:hidden;min-height:0;}
-.faces{display:flex;align-items:center;padding:6px 0 0 6px;max-height:44px;transition:opacity .2s ease,max-height .28s ease,padding .28s ease;}
-.faces.hidden{opacity:0;max-height:0;padding-top:0;pointer-events:none;}
-.faces .avatar{width:32px;height:32px;margin-left:-6px;box-shadow:0 0 0 2px var(--ink-2);font-size:10.5px;}
+.fold.open .fold-inner{padding-top:6px;}
+.faces{display:flex;align-items:center;padding-left:6px;}
+.faces .avatar{width:34px;height:34px;margin-left:-5px;box-shadow:0 0 0 2px var(--ink-2);font-size:11px;}
 .faces-more{margin-left:8px;font-size:12.5px;font-weight:700;color:var(--paper-dim);}
 @media (prefers-reduced-motion:reduce){.fold,.faces,.chev{transition:none;}}
 .detail-scrim{display:none;}
