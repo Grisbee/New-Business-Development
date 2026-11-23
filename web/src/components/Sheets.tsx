@@ -158,7 +158,7 @@ function TeamSheet({ onClose }: { onClose: () => void }) {
     setBusy(false);
     if (res.error) return toast(res.error.message);
     await Promise.all([data.loadTeams(), data.loadChats()]);
-    toast(mode === "create" ? "Team created · share its code to invite people" : "You joined the team");
+    toast(mode === "create" ? "Team created · share its PIN to invite people" : "You joined the team");
     onClose();
     openChat({ type: "team", id: res.data as string });
   }
@@ -171,7 +171,7 @@ function TeamSheet({ onClose }: { onClose: () => void }) {
           Create
         </button>
         <button type="button" className={mode === "join" ? "active" : ""} onClick={() => setMode("join")}>
-          Join with a code
+          Join with a PIN
         </button>
       </div>
       {mode === "create" ? (
@@ -183,7 +183,7 @@ function TeamSheet({ onClose }: { onClose: () => void }) {
           <div className="row2">
             <label className="field">
               Course code
-              <input name="code" required minLength={2} maxLength={12} placeholder="e.g. ME3021" />
+              <input name="code" required minLength={2} maxLength={12} placeholder="e.g. ME3021 (on your timetable)" />
             </label>
             <label className="field">
               Course name
@@ -200,8 +200,8 @@ function TeamSheet({ onClose }: { onClose: () => void }) {
         </>
       ) : (
         <label className="field">
-          Team code
-          <input name="join" required minLength={6} maxLength={6} autoFocus placeholder="e.g. 4F2A9C" style={{ textTransform: "uppercase" }} />
+          Team PIN
+          <input name="join" required inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} autoFocus placeholder="6 digits from a teammate" autoComplete="off" />
         </label>
       )}
       <button className="btn primary lg" type="submit" disabled={busy}>

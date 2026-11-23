@@ -193,7 +193,16 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
         <div className="chat-title">
           <b>{t.name}</b>
           <span>
-            {t.course_code} · {t.member_count} members · code {t.join_code}
+            {t.course_code} · {t.member_count} members ·{" "}
+            <button
+              className="pin"
+              title="Copy the PIN"
+              onClick={() => {
+                void navigator.clipboard?.writeText(t.join_code).then(() => toast("PIN copied · share it with your team"));
+              }}
+            >
+              PIN {t.join_code}
+            </button>
           </span>
         </div>
       </>

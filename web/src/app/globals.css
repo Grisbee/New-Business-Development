@@ -478,3 +478,4 @@ html,body{overflow:hidden;height:100%;}
 .legend-star{width:10px;height:10px;fill:var(--paper-dim);}
 .dots{align-items:center;}
 .cal-legend{padding:0 6px 10px;flex-wrap:wrap;}
+.pin{font:inherit;font-weight:700;color:var(--accent);}
