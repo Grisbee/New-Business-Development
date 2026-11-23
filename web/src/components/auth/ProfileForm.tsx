@@ -72,7 +72,7 @@ export function ProfileForm({
           <input required maxLength={40} value={last} onChange={(e) => setLast(e.target.value)} autoComplete="family-name" />
         </label>
       </div>
-      <span className="hint">Only the first 3 letters of your last name are saved and shown, e.g. “John Smi” instead of “John Smith”.</span>
+      <span className="hint">Only the first 3 letters of your last name are saved and shown, e.g. “John Smi.” instead of “John Smith”.</span>
       <label className="field">
         Username
         <input readOnly tabIndex={-1} value={usernamePreview(first, last) || ""} placeholder="made from your name" style={{ color: "var(--paper-dim)" }} />
