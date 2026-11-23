@@ -47,7 +47,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     const t = e.tickets[ticket.tier];
     const ok = await confirm({
       title: "Book this ticket?",
-      body: `${ticket.qty} × ${t?.name} for “${e.title}”, NT$${((t?.price ?? 0) * ticket.qty).toLocaleString("en-US")} paid at the door.`,
+      body: `${ticket.qty} × ${t?.name} for “${e.title}”, NT$${((t?.price ?? 0) * ticket.qty).toLocaleString("en-US")} paid at the door. The venue keeps a spot for you, so cancel here if you can’t make it 🙏`,
       ok: "Book",
     });
     if (!ok) return;

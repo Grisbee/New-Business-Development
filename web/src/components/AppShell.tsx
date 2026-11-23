@@ -168,18 +168,29 @@ export function AppShell({ me }: { me: Profile }) {
     async (e: EventRow) => {
       const mine = data.going.get(e.id);
       if (e.host_id === me.id) return toast("You’re hosting this event");
-      const series = e.repeat !== "none" ? " It repeats, so this is for every date." : "";
+      const series = e.repeat !== "none" ? " (It repeats: this is for every date.)" : "";
+      // Like Sidequest: a little nudge to only join when you'll really come.
       const yes = await confirm(
         mine
-          ? {
-              title: mine.status === "waitlist" ? "Leave the waitlist?" : "Leave this event?",
-              body: mine.status === "waitlist" ? `You’ll lose your place for “${e.title}”.` : `You’ll leave “${e.title}” and its group chat.${series}`,
-              ok: "Leave",
-              danger: true,
-            }
+          ? mine.status === "waitlist"
+            ? { title: "Leave the waitlist?", body: `You’ll lose your place in line for “${e.title}”.`, ok: "Leave waitlist", danger: true }
+            : {
+                title: "Leave this event?",
+                body: `You’ll leave the group chat, and your spot goes to the next person on the waitlist.${series} We’ll miss you 👋`,
+                ok: "Leave event",
+                danger: true,
+              }
           : isFull(e)
-            ? { title: "Join the waitlist?", body: `“${e.title}” is full. You’ll get a spot when someone leaves.`, ok: "Join waitlist" }
-            : { title: "Are you coming?", body: `You’ll join “${e.title}” and its group chat.${series}`, ok: "I’m in" },
+            ? {
+                title: "Join the waitlist?",
+                body: `“${e.title}” is full right now. If a spot opens up it’s yours, so only sign up if you’d really come 🙌`,
+                ok: "Put me on the waitlist",
+              }
+            : {
+                title: "Are you coming?",
+                body: `The group plans around who’s coming, and empty spots make everyone a little sad 😢 Please only join if you’re planning to show up. If plans change, leave so someone else can take your place.${series}`,
+                ok: "I’ll be there",
+              },
       );
       if (!yes) return;
       if (mine) {
