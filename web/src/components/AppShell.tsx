@@ -519,7 +519,13 @@ function ThemeButton() {
 // The avatar in the top bar: a small menu with the profile and signing out.
 function ProfileMenu({ me }: { me: Profile }) {
   const [open, setOpen] = useState(false);
+  // The theme switch lives here on phones (the top bar is full there).
+  const [dark, setDark] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the theme is set before React loads
+    if (open) setDark(document.documentElement.dataset.theme === "dark");
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     const close = (e: PointerEvent) => {
@@ -556,6 +562,22 @@ function ProfileMenu({ me }: { me: Profile }) {
             {it.label}
           </Link>
         ))}
+        <button
+          tabIndex={open ? 0 : -1}
+          className="pmenu-theme"
+          onClick={() => {
+            const root = document.documentElement;
+            const next = root.dataset.theme === "dark" ? "light" : "dark";
+            root.dataset.theme = next;
+            setDark(next === "dark");
+            try {
+              localStorage.setItem("sq-theme", next);
+            } catch {}
+          }}
+        >
+          <Ic name={dark ? "sun" : "moon"} size={16} />
+          {dark ? "Light mode" : "Dark mode"}
+        </button>
         <button
           tabIndex={open ? 0 : -1}
           className="pmenu-out"

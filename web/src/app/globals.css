@@ -550,3 +550,9 @@ button.logo{color:inherit;}
 .follow.busy{opacity:.75;pointer-events:none;}
 .follow:disabled{opacity:.75;}
 a.create-row{text-decoration:none;}
+/* Phones: the theme switch is in the avatar menu, not the top bar */
+.pmenu-theme{display:none!important;}
+@media (max-width:1023px){
+  .topbar .theme-btn{display:none;}
+  .pmenu-theme{display:flex!important;}
+}
