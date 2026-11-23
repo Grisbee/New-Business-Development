@@ -212,7 +212,7 @@ export function EventEditor({
                 Spots
                 <div className="spots">
                   <select name="max" defaultValue={initial?.max_going ?? 8} disabled={unlimited} aria-label="Spots">
-                    {SPOTS.map((n) => (
+                    {(initial?.max_going && !SPOTS.includes(initial.max_going) ? [...SPOTS, initial.max_going].sort((a, b) => a - b) : SPOTS).map((n) => (
                       <option key={n} value={n}>
                         {n}
                       </option>

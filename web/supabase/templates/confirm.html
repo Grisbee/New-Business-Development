@@ -1,8 +1,8 @@
-<!-- Supabase → Authentication → Emails → "Confirm signup". Subject: "Confirm your email". -->
+<!-- Supabase → Authentication → Emails (needs custom SMTP to edit). Subject: "Confirm your email". The app confirms by link (/auth/callback). -->
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1C1C1E">
   <p style="font-size:20px;font-weight:800;margin:0 0 16px">Side<span style="color:#EF7393">Quest</span></p>
   <h1 style="font-size:20px;margin:0 0 8px">Confirm your email</h1>
-  <p style="font-size:14px;line-height:1.5;margin:0 0 16px">Here’s your code to finish creating your SideQuest account:</p>
-  <p style="font-size:32px;font-weight:800;letter-spacing:6px;margin:0 0 16px;color:#C93B63">{{ .Token }}</p>
-  <p style="font-size:12px;color:#6B6865;margin:0">The code expires in an hour. If you didn’t ask for it, ignore this email.</p>
+  <p style="font-size:14px;line-height:1.5;margin:0 0 20px">Tap the button to finish creating your SideQuest account. Open it on the device you signed up on.</p>
+  <p style="margin:0 0 20px"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#C93B63;color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px">Confirm your email</a></p>
+  <p style="font-size:12px;color:#6B6865;margin:0">The link expires in an hour. If you didn’t ask for it, ignore this email.</p>
 </div>

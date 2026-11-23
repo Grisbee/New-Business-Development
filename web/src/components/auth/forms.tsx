@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { safeNext } from "@/lib/safeNext";
 
 // Supabase's messages are fine to show as they are ("Invalid login
 // credentials", "Token has expired or is invalid").
@@ -48,8 +49,7 @@ export function LoginForm() {
           if (error) return error.message;
           // Replaced, so Back doesn't return to the form. `next` only ever
           // points inside the app.
-          const next = params.get("next");
-          window.location.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : "/");
+          window.location.replace(safeNext(params.get("next")));
         });
       }}
     >
@@ -83,7 +83,7 @@ export function LoginForm() {
         <Link href="/forgot">Forgot your password?</Link>
       </p>
       <p className="auth-sub">
-        New here? <Link href="/signup">Create an account</Link>
+        New here? <Link href={params.get("next") ? `/signup?next=${encodeURIComponent(params.get("next")!)}` : "/signup"}>Create an account</Link>
       </p>
     </form>
   );
@@ -91,6 +91,9 @@ export function LoginForm() {
 
 export function SignupForm() {
   const router = useRouter();
+  // A shared link someone followed before signing up opens after onboarding.
+  const next = safeNext(useSearchParams().get("next"));
+  const after = next === "/" ? "/onboarding" : `/onboarding?next=${encodeURIComponent(next)}`;
   const { error, busy, run } = useSubmit();
   return (
     <form
@@ -101,8 +104,11 @@ export function SignupForm() {
         const password = String(f.get("password"));
         void run(async () => {
           if (password.length < 8) return "Use at least 8 characters for the password.";
-          const { error } = await createClient().auth.signUp({ email, password, options: { emailRedirectTo: callback("/onboarding") } });
+          const { data, error } = await createClient().auth.signUp({ email, password, options: { emailRedirectTo: callback(after) } });
           if (error) return error.message;
+          // Supabase answers "ok" for an address that already has an account
+          // (and sends nothing); it shows as a user without identities.
+          if (data.user && data.user.identities?.length === 0) return "There’s already an account with this email. Sign in, or reset your password.";
           router.push(`/verify?email=${encodeURIComponent(email)}`);
         });
       }}
@@ -167,6 +173,7 @@ export function CheckEmail() {
 }
 
 export function ForgotForm() {
+  const expired = useSearchParams().get("error") === "link";
   const [sent, setSent] = useState(false);
   const { error, busy, run, done } = useSubmit();
   if (sent)
@@ -191,6 +198,7 @@ export function ForgotForm() {
         });
       }}
     >
+      {expired && <p className="error">That reset link has expired or was opened in another browser. Ask for a new one below.</p>}
       <label className="field">
         Email
         <input name="email" type="email" required autoComplete="email" />

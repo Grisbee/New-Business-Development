@@ -158,8 +158,9 @@ export function AppShell({ me }: { me: Profile }) {
     return () => clearTimeout(id);
   }, [toastMsg]);
 
-  const raise = (which: "detail" | "chat") =>
-    setLayers((l) => ({ ...l, [which]: Math.max(l.detail, l.chat) + 1 }));
+  // Two layers only: whichever was opened last is on top (unbounded counters
+  // ended up above toasts and dialogs).
+  const raise = (which: "detail" | "chat") => setLayers(which === "detail" ? { detail: 5, chat: 4 } : { detail: 4, chat: 5 });
   const openDetail = useCallback((id: string) => {
     setDetail(id);
     raise("detail");
@@ -459,12 +460,25 @@ export function AppShell({ me }: { me: Profile }) {
               }
             }}
           >
-            <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title">
+            <div
+              className="dialog"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="dialog-title"
+              onKeyDown={(ev) => {
+                if (ev.key === "Escape") {
+                  dialog.resolve(false);
+                  setDialog(null);
+                }
+              }}
+            >
               <b id="dialog-title">{dialog.title}</b>
               <p>{dialog.body}</p>
               <div className="dialog-actions">
                 <button
                   className="btn lg"
+                  // Risky actions: Enter cancels rather than confirms.
+                  autoFocus={dialog.danger}
                   onClick={() => {
                     dialog.resolve(false);
                     setDialog(null);
@@ -474,7 +488,7 @@ export function AppShell({ me }: { me: Profile }) {
                 </button>
                 <button
                   className={`btn lg ${dialog.danger ? "danger" : "primary"}`}
-                  autoFocus
+                  autoFocus={!dialog.danger}
                   onClick={() => {
                     dialog.resolve(true);
                     setDialog(null);

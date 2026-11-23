@@ -4,15 +4,37 @@ import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppShell";
 import { ShareButton } from "@/components/views/Lists";
 import { Ic } from "@/components/Icons";
-import { REPEAT_LABEL, goingText, fmtLong, fmtShort, imageUrl, initials, to12h } from "@/lib/format";
-import { nameOf, type PersonLite } from "@/lib/types";
+import { REPEAT_LABEL, goingText, fmtLong, fmtShort, imageUrl, initials, nextOccurrence, to12h, todayIso } from "@/lib/format";
+import { nameOf, type EventRow, type PersonLite } from "@/lib/types";
+import { EVENT_SELECT } from "@/lib/useAppData";
+import { Missing } from "@/components/Missing";
 
 type Attendee = { user_id: string; status: string; person: PersonLite | null };
 
 export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
   const { data, me, isGoing, isFull, toggleJoin, openChat, toast, confirm, isPending } = useApp();
   const joining = isPending(`join:${id}`);
-  const e = data.events.find((x) => x.id === id);
+  const listed = data.events.find((x) => x.id === id);
+  // Not in the loaded lists (an old event from a link or a notification):
+  // fetch it on its own.
+  const [fetched, setFetched] = useState<EventRow | null | undefined>(undefined);
+  useEffect(() => {
+    if (listed || !data.loaded) return;
+    let cancelled = false;
+    void data.supabase
+      .from("events")
+      .select(EVENT_SELECT)
+      .eq("id", id)
+      .maybeSingle()
+      .then(({ data: row }) => {
+        if (cancelled) return;
+        setFetched(row ? ({ ...(row as unknown as EventRow), next_on: nextOccurrence(row as unknown as EventRow, todayIso()) } as EventRow) : null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [listed, data.loaded, data.supabase, id]);
+  const e = listed ?? fetched ?? undefined;
   const [ticket, setTicket] = useState({ tier: 0, qty: 1 });
   const [people, setPeople] = useState<Attendee[]>([]);
   const [busy, setBusy] = useState(false);
@@ -40,7 +62,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     };
   }, [data.supabase, id, kind, goingCount, myStatus]);
 
-  if (!e) return null;
+  if (!e) return <Missing loading={!data.loaded || fetched === undefined} what="event" onClose={onClose} />;
   const on = isGoing(e.id);
   const pub = e.kind === "public";
   const mine = data.going.get(e.id);

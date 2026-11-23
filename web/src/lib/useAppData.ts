@@ -100,6 +100,7 @@ export function useAppData(me: Profile) {
   }, [supabase]);
 
   const reloadAll = useCallback(async () => {
+    setError(null);
     await Promise.all([loadEvents(), loadGoing(), loadThreads(), loadChats(), loadTeams(), loadRequests()]);
     setLoaded(true);
   }, [loadEvents, loadGoing, loadThreads, loadChats, loadTeams, loadRequests]);
@@ -128,7 +129,7 @@ export function useAppData(me: Profile) {
     };
     const today = todayIso();
     const channel = supabase
-      .channel("app")
+      .channel(`app:${crypto.randomUUID()}`)
       // RLS limits these to chats I can read.
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => schedule(loadChats))
       // My own joins, approvals and waitlist moves.
@@ -151,6 +152,16 @@ export function useAppData(me: Profile) {
       void supabase.removeChannel(channel);
     };
   }, [supabase, me.id, loadChats, loadEvents, loadGoing, loadRequests]);
+
+  // Realtime doesn't replay what was missed while the phone slept: catch up
+  // when the app comes back to the foreground.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void reloadAll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [reloadAll]);
 
   return {
     supabase,

@@ -23,6 +23,22 @@ export function tagForThread(threadTag: string | undefined): string {
 const PLACEHOLDER = { public: "Search events or venues", community: "Search events", threads: "Search communities" };
 type ListKey = keyof typeof TAGS;
 
+// Cards and rows open the event; this makes them reachable by keyboard
+// (Tab, then Enter or Space) like the buttons inside them.
+export function openable(open: () => void, label: string) {
+  return {
+    role: "button",
+    tabIndex: 0,
+    "aria-label": label,
+    onKeyDown: (ev: React.KeyboardEvent) => {
+      if (ev.target === ev.currentTarget && (ev.key === "Enter" || ev.key === " ")) {
+        ev.preventDefault();
+        open();
+      }
+    },
+  };
+}
+
 export const NoResults = () => <div className="empty">No matches. Try another word, tag or date range.</div>;
 
 /* ---------------------------------------------------------------- toolbar */
@@ -258,16 +274,16 @@ export function ActionButtons({ e, compact }: { e: EventRow; compact?: boolean }
         Requested
       </button>
     );
-  if (e.join_mode === "approval")
-    return (
-      <button className="btn primary" onClick={stop(() => void toggleJoin(e))}>
-        Request
-      </button>
-    );
   if (data.going.get(e.id)?.status === "waitlist")
     return (
       <button className="btn" onClick={stop(() => void toggleJoin(e))}>
         On waitlist
+      </button>
+    );
+  if (e.join_mode === "approval")
+    return (
+      <button className="btn primary" onClick={stop(() => void toggleJoin(e))}>
+        Request
       </button>
     );
   if (isFull(e))
@@ -292,7 +308,7 @@ export function ActionButtons({ e, compact }: { e: EventRow; compact?: boolean }
 export function ERow({ e, showDate = true }: { e: EventRow; showDate?: boolean }) {
   const { openDetail } = useApp();
   return (
-    <div className="erow" onClick={() => openDetail(e.id)}>
+    <div className="erow" onClick={() => openDetail(e.id)} {...openable(() => openDetail(e.id), e.title)}>
       <Thumb e={e} cls="eimg" />
       <div className="body">
         <span className="w">
@@ -334,7 +350,7 @@ export function PublicView() {
       <div className="list">
         {!items.length && (filtering("public") ? <NoResults /> : <div className="empty">No public events yet. Bars, clubs and venues list theirs here.</div>)}
         {items.map((e) => (
-          <article key={e.id} className="card has-img" onClick={() => openDetail(e.id)}>
+          <article key={e.id} className="card has-img" onClick={() => openDetail(e.id)} {...openable(() => openDetail(e.id), e.title)}>
             <div className="banner" style={{ backgroundImage: `url("${imageUrl(e.image) ?? "/demo/p0.jpg"}")` }}>
               <Datebox iso={e.next_on} />
             </div>
@@ -385,7 +401,7 @@ export function CommunityView() {
       <div className="list">
         {!items.length && (filtering("community") ? <NoResults /> : <div className="empty">No community events yet. Tap <b>+</b> to start one.</div>)}
         {items.map((e) => (
-          <article key={e.id} className="card" onClick={() => openDetail(e.id)}>
+          <article key={e.id} className="card" onClick={() => openDetail(e.id)} {...openable(() => openDetail(e.id), e.title)}>
             <div className="card-top">
               <Thumb e={e} cls="thumb" />
               <div className="card-main">
@@ -467,7 +483,7 @@ function ThreadRow({ t, mode }: { t: Thread; mode: "mine" | "all" }) {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               e.stopPropagation();
-              void toggleFollow(t.id);
+              if (!following) void toggleFollow(t.id);
             }
           }}
         >

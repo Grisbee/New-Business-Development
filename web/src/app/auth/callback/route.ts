@@ -15,5 +15,6 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(`${origin}${target}`);
   }
-  return NextResponse.redirect(`${origin}/login?error=link`);
+  // A reset link that didn't work: ask for a new one, not "just sign in".
+  return NextResponse.redirect(target.startsWith("/reset") ? `${origin}/forgot?error=link` : `${origin}/login?error=link`);
 }

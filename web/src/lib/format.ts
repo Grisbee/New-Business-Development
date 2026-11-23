@@ -90,9 +90,15 @@ export function occurrences(e: { starts_on: string; repeat: string; repeat_until
   const out: string[] = [];
   const start = parse(e.starts_on);
   for (let i = 0; i < 600; i++) {
-    const d = new Date(start);
-    if (e.repeat === "monthly") d.setMonth(start.getMonth() + i);
-    else d.setDate(start.getDate() + i * (e.repeat === "weekly" ? 7 : 14));
+    let d: Date;
+    if (e.repeat === "monthly") {
+      // Same day of the month; months without it (31st, 30th, 29 Feb) are skipped.
+      d = new Date(start.getFullYear(), start.getMonth() + i, start.getDate());
+      if (d.getDate() !== start.getDate()) continue;
+    } else {
+      d = new Date(start);
+      d.setDate(start.getDate() + i * (e.repeat === "weekly" ? 7 : 14));
+    }
     const iso = isoOf(d);
     if (iso > end) break;
     if (iso >= from) out.push(iso);
@@ -103,7 +109,9 @@ export function occurrences(e: { starts_on: string; repeat: string; repeat_until
 // The next date on or after `today`; the first date if it never repeats.
 export function nextOccurrence(e: { starts_on: string; repeat: string; repeat_until: string | null }, today: string): string {
   if (e.repeat === "none") return e.starts_on;
-  return occurrences(e, today, addDays(today, 400))[0] ?? e.repeat_until ?? e.starts_on;
+  // Over: the series' last real date (not repeat_until, which may fall on
+  // another weekday).
+  return occurrences(e, today, addDays(today, 400))[0] ?? occurrences(e, e.starts_on, e.repeat_until ?? today).at(-1) ?? e.starts_on;
 }
 
 // "6 of 10 going", or "6 going" with unlimited spots. The host counts.

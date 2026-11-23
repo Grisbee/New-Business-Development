@@ -27,7 +27,7 @@ function text(n: Note): { text: React.ReactNode; emoji: string } {
     case "join_request":
       return { emoji: "🙋", text: <>{who} asks to join {ev}</> };
     case "request_approved":
-      return { emoji: "🎉", text: <>You’re in! {who} approved you for {ev}</> };
+      return { emoji: "🎉", text: <>{who} approved your request for {ev}</> };
     case "request_declined":
       return { emoji: "😔", text: <>Your request for {ev} wasn’t accepted this time</> };
     case "joined":
@@ -64,11 +64,14 @@ export function Bell({ userId, onOpenEvent }: { userId: string; onOpenEvent: (id
     // eslint-disable-next-line react-hooks/set-state-in-effect -- loading on mount
     void load();
     const channel = supabase
-      .channel("bell")
+      .channel(`bell:${crypto.randomUUID()}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` }, () => void load())
       .subscribe();
+    const onVisible = () => document.visibilityState === "visible" && void load();
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       void supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [supabase, userId, load]);
 

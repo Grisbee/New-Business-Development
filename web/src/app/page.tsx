@@ -3,7 +3,7 @@ import { createClient, getUserId } from "@/lib/supabase/server";
 import { AppShell } from "@/components/AppShell";
 import type { Profile } from "@/lib/types";
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ event?: string; thread?: string }> }) {
   const userId = await getUserId();
   if (!userId) redirect("/login");
   const supabase = await createClient();
@@ -13,6 +13,11 @@ export default async function Home() {
     .eq("id", userId)
     .single();
   if (!me) redirect("/login");
-  if (!me.username || !me.first_name) redirect("/onboarding");
+  if (!me.username || !me.first_name) {
+    // Keep a shared link for after onboarding.
+    const { event, thread } = await searchParams;
+    const back = event ? `/?event=${event}` : thread ? `/?thread=${thread}` : null;
+    redirect(back ? `/onboarding?next=${encodeURIComponent(back)}` : "/onboarding");
+  }
   return <AppShell me={me as Profile} />;
 }

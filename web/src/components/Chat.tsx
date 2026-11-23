@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useApp } from "@/components/AppShell";
-import { ERow, Thumb } from "@/components/views/Lists";
+import { ERow, Thumb, openable } from "@/components/views/Lists";
 import { UniRow } from "@/components/views/Calendars";
 import { Ic } from "@/components/Icons";
 import { resizeImage } from "@/lib/resizeImage";
+import { Missing } from "@/components/Missing";
 import { USER_COLORS, goingText, chatTime, dueIn, fmtShort, initials, to12h } from "@/lib/format";
 import { nameOf, type ChatRef, type FileInfo, type Message } from "@/lib/types";
 
@@ -15,7 +16,7 @@ const colorFor = (n: string) => USER_COLORS[[...n].reduce((a, c) => a + c.charCo
 const column = (t: ChatRef["type"]) => (t === "thread" ? "thread_id" : t === "event" ? "event_id" : "team_id");
 
 export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; initialTab: string; onClose: () => void }) {
-  const { data, me, toast, toggleFollow, openSheet, isPending } = useApp();
+  const { data, me, toast, toggleFollow, openSheet, isPending, today } = useApp();
   const [msgs, setMsgs] = useState<Message[]>([]);
   // Signed links for the photos in this chat (the bucket is private).
   const [photoUrls, setPhotoUrls] = useState<Map<string, string>>(new Map());
@@ -71,7 +72,8 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- loading the chat on open
     void load();
     const channel = data.supabase
-      .channel(`chat:${chatRef.type}:${chatRef.id}`)
+      // A unique topic: a channel still leaving can't be handed back.
+      .channel(`chat:${chatRef.type}:${chatRef.id}:${crypto.randomUUID()}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `${col}=eq.${chatRef.id}` }, (payload) => {
         const id = (payload.new as { id: number }).id;
         void data.supabase
@@ -92,7 +94,15 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
       // And once on close, so the badge clears.
       void data.supabase.rpc("mark_read", { p_chat_key: `${chatRef.type}:${chatRef.id}` });
     };
-  }, [data.supabase, chatRef, col, load, followed, append]);
+  }, [data.supabase, chatRef.type, chatRef.id, col, load, append]);
+
+  // Following a thread unlocks its chat: load it again, same channel.
+  const firstFollow = useRef(followed);
+  useEffect(() => {
+    if (firstFollow.current === followed) return;
+    firstFollow.current = followed;
+    void load();
+  }, [followed, load]);
 
   useEffect(() => {
     if (msgsRef.current) msgsRef.current.scrollTop = msgsRef.current.scrollHeight;
@@ -196,7 +206,7 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
 
   if (chatRef.type === "thread") {
     const t = data.threads.find((x) => x.id === chatRef.id);
-    if (!t) return null;
+    if (!t) return <Missing loading={!data.loaded} what="thread" onClose={onClose} />;
     const related = data.events.filter((e) => e.thread_id === t.id);
     head = (
       <>
@@ -282,10 +292,10 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
     ) : null;
   } else if (chatRef.type === "team") {
     const t = data.teams.find((x) => x.id === chatRef.id);
-    if (!t) return null;
+    if (!t) return <Missing loading={!data.loaded} what="team" onClose={onClose} />;
     const files = msgs.filter((m) => m.kind === "file" && m.file).reverse();
     const its = data.items.filter((x) => x.team_id === t.id);
-    const n = its.filter((x) => x.due_on >= new Date().toISOString().slice(0, 10)).length;
+    const n = its.filter((x) => x.due_on >= today).length;
     head = (
       <>
         <span className="thread-icon" style={{ background: t.color }}>
@@ -385,7 +395,7 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
       ) : null;
   } else {
     const e = data.events.find((x) => x.id === chatRef.id);
-    if (!e) return null;
+    if (!e) return <Missing loading={!data.loaded} what="event chat" onClose={onClose} />;
     head = (
       <>
         <Thumb e={e} cls="chimg" />
@@ -547,7 +557,7 @@ function EventCard({ id }: { id: string }) {
   const on = isGoing(id);
   const full = isFull(e);
   return (
-    <div className="evmsg" onClick={() => openDetail(id)}>
+    <div className="evmsg" onClick={() => openDetail(id)} {...openable(() => openDetail(id), e.title)}>
       <div className="evlabel">
         <Ic name="calendar" size={13} width={2.2} />
         Event
