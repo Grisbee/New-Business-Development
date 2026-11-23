@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Public_Sans } from "next/font/google";
 import "./globals.css";
+import { ViewportHeight } from "@/components/ViewportHeight";
 
 const archivo = Archivo({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-archivo" });
 const publicSans = Public_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-public-sans" });
@@ -16,6 +17,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Android/Chrome: the keyboard shrinks the page instead of covering it.
+  interactiveWidget: "resizes-content",
   themeColor: "#C93B63",
 };
 
@@ -28,7 +31,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <ViewportHeight />
+        {children}
+      </body>
     </html>
   );
 }

@@ -6,7 +6,7 @@ export const metadata = { title: "Reset your password · SideQuest" };
 
 export default function ForgotPage() {
   return (
-    <AuthCard title="Reset your password" sub="We’ll email you a link to pick a new password.">
+    <AuthCard back="/login" title="Reset your password" sub="We’ll email you a link to pick a new password.">
       <Suspense>
         <ForgotForm />
       </Suspense>

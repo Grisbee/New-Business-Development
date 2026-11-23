@@ -6,7 +6,7 @@ export const metadata = { title: "Confirm your email · SideQuest" };
 
 export default function VerifyPage() {
   return (
-    <AuthCard title="Check your email">
+    <AuthCard back="/login" title="Check your email">
       <Suspense>
         <CheckEmail />
       </Suspense>

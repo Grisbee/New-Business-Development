@@ -8,7 +8,7 @@ export const metadata = { title: "New password · SideQuest" };
 export default async function ResetPage() {
   await requireMe();
   return (
-    <AuthCard title="Pick a new password">
+    <AuthCard back="/" title="Pick a new password">
       <NewPasswordForm />
     </AuthCard>
   );
