@@ -488,10 +488,13 @@ export function ThreadsView() {
       </div>
       <div className="seg">
         <button className={seg === "mine" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "mine" }))}>
-          My threads{unread ? <span className="badge">{unread}</span> : null}
+          My threads
+          <span className="badge count">{followed.length}</span>
+          {unread ? <span className="badge">{unread}</span> : null}
         </button>
         <button className={seg === "explore" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "explore" }))}>
           Explore
+          <span className="badge count">{data.threads.length}</span>
         </button>
       </div>
       {seg === "explore" ? (

@@ -540,3 +540,5 @@ button.logo{color:inherit;}
 @media (min-width:1024px){.screen .fab-menu{bottom:100px;}}
 .hero-share{left:auto;right:14px;}
 .card-foot .chatbtn{width:34px;height:34px;flex-shrink:0;}
+/* Totals next to a tab name: grey, unlike the pink unread badge */
+.badge.count{background:var(--ink-3);color:var(--paper);}
