@@ -9,10 +9,10 @@ export default async function Home() {
   const supabase = await createClient();
   const { data: me } = await supabase
     .from("profiles")
-    .select("id, username, tag, university, color, role, venue_name")
+    .select("id, username, first_name, last_short, display_name, tag, university, color, role, venue_name")
     .eq("id", userId)
     .single();
   if (!me) redirect("/login");
-  if (!me.username) redirect("/onboarding");
+  if (!me.username || !me.first_name) redirect("/onboarding");
   return <AppShell me={me as Profile} />;
 }

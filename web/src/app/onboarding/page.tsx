@@ -7,9 +7,9 @@ export const metadata = { title: "Welcome · SideQuest" };
 
 export default async function OnboardingPage() {
   const me = await requireMe();
-  if (me.username) redirect("/");
+  if (me.username && me.first_name) redirect("/");
   return (
-    <AuthCard title="Welcome to SideQuest" sub="Pick a username. It’s how people see you in events and chats.">
+    <AuthCard title="Welcome to SideQuest" sub="Tell us who you are. Your name shows in events and chats.">
       <ProfileForm userId={me.id} initial={me} submitLabel="Let’s go" then="/" />
     </AuthCard>
   );

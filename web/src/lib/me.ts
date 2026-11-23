@@ -9,7 +9,7 @@ export async function requireMe(): Promise<Profile> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
-    .select("id, username, tag, university, color, role, venue_name")
+    .select("id, username, first_name, last_short, display_name, tag, university, color, role, venue_name")
     .eq("id", userId)
     .single();
   if (!data) redirect("/login");

@@ -5,6 +5,10 @@ export type Role = "user" | "venue" | "admin";
 export type Profile = {
   id: string;
   username: string | null;
+  first_name: string | null;
+  last_short: string | null;
+  // "Paweł Śli": first name and the first three letters of the last name.
+  display_name: string | null;
   tag: string | null;
   university: string | null;
   color: string;
@@ -12,7 +16,11 @@ export type Profile = {
   venue_name: string | null;
 };
 
-export type PersonLite = Pick<Profile, "id" | "username" | "color" | "tag" | "venue_name" | "role">;
+export type PersonLite = Pick<Profile, "id" | "username" | "display_name" | "color" | "tag" | "venue_name" | "role">;
+
+// How people are named in the app: "Paweł Śli", else the username.
+export const nameOf = (p: { display_name?: string | null; username?: string | null } | null | undefined) =>
+  p?.display_name || p?.username || "Someone";
 
 export type Ticket = { name: string; note?: string | null; price: number };
 
@@ -85,7 +93,7 @@ export type Message = {
   ref_item: string | null;
   file: FileInfo | null;
   created_at: string;
-  author: { username: string | null; color: string } | null;
+  author: { username: string | null; display_name: string | null; color: string } | null;
 };
 
 export type ChatSummary = {

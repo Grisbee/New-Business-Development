@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import Link from "next/link";
 import { Ic } from "@/components/Icons";
 import { useAppData, type AppData } from "@/lib/useAppData";
-import { todayIso } from "@/lib/format";
+import { initials, todayIso } from "@/lib/format";
 import type { ChatRef, EventRow, Profile } from "@/lib/types";
 import { PublicView, CommunityView, ThreadsView, MineView } from "@/components/views/Lists";
 import { CalendarView, TeamsView, UniCalendarView } from "@/components/views/Calendars";
@@ -233,9 +233,9 @@ export function AppShell({ me }: { me: Profile }) {
             University
           </button>
           <ThemeButton />
-          <Link href="/me" className="icon-btn" aria-label="Your profile" title={me.username ?? "Profile"}>
+          <Link href="/me" className="icon-btn" aria-label="Your profile" title={me.display_name ?? me.username ?? "Profile"}>
             <span className="avatar" style={{ background: me.color, width: 28, height: 28 }}>
-              {(me.username ?? "?").slice(0, 2).toUpperCase()}
+              {initials(me.display_name ?? me.username)}
             </span>
           </Link>
         </header>

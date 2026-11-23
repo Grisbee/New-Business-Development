@@ -6,9 +6,9 @@ import { ERow, Thumb } from "@/components/views/Lists";
 import { UniRow } from "@/components/views/Calendars";
 import { Ic } from "@/components/Icons";
 import { USER_COLORS, chatTime, dueIn, fmtShort, initials, to12h } from "@/lib/format";
-import type { ChatRef, FileInfo, Message } from "@/lib/types";
+import { nameOf, type ChatRef, type FileInfo, type Message } from "@/lib/types";
 
-const MSG_SELECT = "id, thread_id, event_id, team_id, user_id, kind, body, ref_event, ref_item, file, created_at, author:profiles!messages_user_id_fkey(username, color)";
+const MSG_SELECT = "id, thread_id, event_id, team_id, user_id, kind, body, ref_event, ref_item, file, created_at, author:profiles!messages_user_id_fkey(username, display_name, color)";
 
 const colorFor = (n: string) => USER_COLORS[[...n].reduce((a, c) => a + c.charCodeAt(0), 0) % USER_COLORS.length];
 const column = (t: ChatRef["type"]) => (t === "thread" ? "thread_id" : t === "event" ? "event_id" : "team_id");
@@ -218,7 +218,7 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
               <span className="body">
                 <span className="t">{m.file!.name}</span>
                 <span className="kind">
-                  {m.user_id === me.id ? "You" : m.author?.username} · {m.file!.size} · {chatTime(m.created_at)}
+                  {m.user_id === me.id ? "You" : nameOf(m.author)} · {m.file!.size} · {chatTime(m.created_at)}
                 </span>
               </span>
             </button>
@@ -331,7 +331,7 @@ function Bubbles({ msgs, hostId, onFile }: { msgs: Message[]; hostId?: string; o
         const newDay = i === 0 || dayOf(msgs[i - 1].created_at) !== day;
         const sep = newDay ? <div className="daysep">{day === new Date().toDateString() ? "TODAY" : chatTime(m.created_at).toUpperCase()}</div> : null;
         const mine = m.user_id === me.id;
-        const name = m.author?.username ?? "someone";
+        const name = nameOf(m.author);
         const color = m.author?.color ?? colorFor(name);
         const card =
           m.kind === "event" && m.ref_event ? (

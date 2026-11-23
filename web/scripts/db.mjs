@@ -67,6 +67,8 @@ async function migrate() {
         throw e;
       }
     }
+    // The Data API caches the schema; new columns are unknown until reloaded.
+    await c.query("notify pgrst, 'reload schema'");
     console.log("migrations up to date");
   });
 }
@@ -136,12 +138,17 @@ async function seed() {
     await c.query("begin");
     for (const n of names) {
       const venue = venues[n];
-      await c.query("update public.profiles set username = $2, tag = $3, role = $4, venue_name = $5 where id = $1", [
+      // Demo names from the handle: "marco.it" → "Marco It", venues by name.
+      const [p0, p1] = n.split(/[._]/);
+      const cap = (x) => x[0].toUpperCase() + x.slice(1);
+      await c.query("update public.profiles set username = $2, tag = $3, role = $4, venue_name = $5, first_name = $6, last_short = $7 where id = $1", [
         ids[n],
         n,
         n === "demo" ? "Exchange · NTUST" : (tags[n] ?? (venue ? "Venue" : "Student · Taipei")),
         venue ? "venue" : "user",
         venue ?? null,
+        venue ? venue.slice(0, 30) : cap(p0),
+        venue || !p1 ? null : cap(p1).slice(0, 3),
       ]);
     }
 

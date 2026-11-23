@@ -6,7 +6,7 @@ import { addDays, todayIso } from "@/lib/format";
 import type { ChatSummary, EventRow, GoingRow, Profile, Team, Thread, UniItem } from "@/lib/types";
 
 export const EVENT_SELECT =
-  "id, kind, thread_id, host_id, title, tag, starts_on, starts_at, place, description, price, tickets, max_going, image, going_count, host:profiles!events_host_id_fkey(id, username, color, tag, venue_name, role)";
+  "id, kind, thread_id, host_id, title, tag, starts_on, starts_at, place, description, price, tickets, max_going, image, going_count, host:profiles!events_host_id_fkey(id, username, display_name, color, tag, venue_name, role)";
 
 // Everything the main screens show, loaded once and refreshed after writes
 // and on realtime changes. Small app, so whole lists are fine.

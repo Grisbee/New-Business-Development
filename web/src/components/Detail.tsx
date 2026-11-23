@@ -5,7 +5,7 @@ import { useApp } from "@/components/AppShell";
 import { ChatButton } from "@/components/views/Lists";
 import { Ic } from "@/components/Icons";
 import { fmtLong, imageUrl, initials, to12h } from "@/lib/format";
-import type { PersonLite } from "@/lib/types";
+import { nameOf, type PersonLite } from "@/lib/types";
 
 type Attendee = { user_id: string; status: string; person: PersonLite | null };
 
@@ -21,7 +21,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     let cancelled = false;
     void data.supabase
       .from("going")
-      .select("user_id, status, person:profiles!going_user_id_fkey(id, username, color, tag, venue_name, role)")
+      .select("user_id, status, person:profiles!going_user_id_fkey(id, username, display_name, color, tag, venue_name, role)")
       .eq("event_id", e.id)
       .eq("status", "going")
       .order("created_at")
@@ -165,11 +165,11 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     const max = e.max_going ?? 0;
     const count = Math.min(e.going_count + 1, max);
     const list: { name: string; tag: string; color: string; role: "host" | "me" | "" }[] = [
-      { name: host?.username ?? "Host", tag: host?.tag ?? "", color: host?.color ?? "#8FC1E3", role: host?.id === me.id ? "me" : "host" },
+      { name: nameOf(host), tag: host?.tag ?? "", color: host?.color ?? "#8FC1E3", role: host?.id === me.id ? "me" : "host" },
       ...people
         .filter((p) => p.user_id !== e.host_id)
         .map((p) => ({
-          name: p.user_id === me.id ? "You" : (p.person?.username ?? "Someone"),
+          name: p.user_id === me.id ? "You" : nameOf(p.person),
           tag: p.person?.tag ?? "",
           color: p.person?.color ?? "#8FC1E3",
           role: (p.user_id === me.id ? "me" : "") as "me" | "",
@@ -225,10 +225,10 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
   ) : (
     <div className="info-row">
       <span className="avatar" style={{ width: 36, height: 36, background: host?.color ?? "#8FC1E3" }}>
-        {initials(host?.username)}
+        {initials(nameOf(host))}
       </span>
       <span>
-        {host?.username}
+        {nameOf(host)}
         <small>Host{host?.tag ? ` · ${host.tag}` : ""}</small>
       </span>
     </div>

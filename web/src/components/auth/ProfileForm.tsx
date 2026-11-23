@@ -16,7 +16,7 @@ export function ProfileForm({
   then,
 }: {
   userId: string;
-  initial: { username: string | null; tag: string | null; university: string | null; color: string };
+  initial: { username: string | null; first_name: string | null; last_short: string | null; tag: string | null; university: string | null; color: string };
   submitLabel: string;
   then: string;
 }) {
@@ -35,12 +35,16 @@ export function ProfileForm({
     const f = new FormData(e.currentTarget);
     const username = String(f.get("username")).trim().toLowerCase();
     const university = uni === "Other" ? otherUni.trim() : uni;
+    const firstName = String(f.get("first_name")).trim();
+    // Only the first three letters are ever sent.
+    const lastShort = [...String(f.get("last_name")).trim()].slice(0, 3).join("");
+    if (!firstName || !lastShort) return setError("Add your first and last name.");
     if (!/^[a-z0-9._]{3,20}$/.test(username)) return setError("3–20 characters: letters, numbers, dots and underscores.");
     if (!university) return setError("Type your university’s name.");
     setBusy(true);
     const { error } = await createClient()
       .from("profiles")
-      .update({ username, tag: `${status} · ${university}`.slice(0, 40), university, color })
+      .update({ username, first_name: firstName, last_short: lastShort, tag: `${status} · ${university}`.slice(0, 40), university, color })
       .eq("id", userId)
       .select("id")
       .single();
@@ -51,6 +55,17 @@ export function ProfileForm({
 
   return (
     <form onSubmit={save}>
+      <div className="row2">
+        <label className="field">
+          First name
+          <input name="first_name" required maxLength={30} defaultValue={initial.first_name ?? ""} autoComplete="given-name" />
+        </label>
+        <label className="field">
+          Last name
+          <input name="last_name" required maxLength={40} defaultValue={initial.last_short ?? ""} autoComplete="family-name" />
+        </label>
+      </div>
+      <span className="hint">Only the first 3 letters of your last name are saved and shown, e.g. “Paweł Śli”.</span>
       <label className="field">
         Username
         <input name="username" required defaultValue={initial.username ?? ""} maxLength={20} autoCapitalize="none" placeholder="e.g. marco.it" />

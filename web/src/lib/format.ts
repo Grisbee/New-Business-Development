@@ -85,7 +85,11 @@ export function presets(today = todayIso()): [string, string][] {
 
 export const USER_COLORS = ["#8FC1E3", "#E8A0BF", "#F0C987", "#B8D8A8", "#C9B6F2", "#F2A488", "#7FD1C1"];
 
-export const initials = (name: string | null | undefined) => (name ?? "?").slice(0, 2).toUpperCase();
+// "Paweł Śli" → "PŚ", "marco.it" → "MA".
+export const initials = (name: string | null | undefined) => {
+  const parts = (name ?? "?").trim().split(/\s+/);
+  return (parts.length > 1 ? parts[0][0] + parts[1][0] : parts[0].slice(0, 2)).toUpperCase();
+};
 
 // Event photo: a demo key ("demo:p0") or a storage path in event-images.
 export function imageUrl(image: string | null): string | null {

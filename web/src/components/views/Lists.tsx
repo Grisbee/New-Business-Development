@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useApp, type UiState } from "@/components/AppShell";
 import { Ic } from "@/components/Icons";
 import { DOW, MON, chatTime, dm, fmtShort, imageUrl, initials, parse, presets, priceLabel, to12h } from "@/lib/format";
-import type { ChatSummary, EventRow, Thread } from "@/lib/types";
+import { nameOf, type ChatSummary, type EventRow, type Thread } from "@/lib/types";
 
 export const TAGS = {
   public: ["Clubs", "Live Music", "Festivals", "Bars", "Food"],
@@ -246,7 +246,7 @@ export function ERow({ e, showDate = true }: { e: EventRow; showDate?: boolean }
 
 const upcoming = (events: EventRow[], today: string) => events.filter((e) => e.starts_on >= today);
 const byDate = (a: EventRow, b: EventRow) => a.starts_on.localeCompare(b.starts_on) || a.starts_at.localeCompare(b.starts_at);
-const hostName = (e: EventRow) => (e.kind === "public" ? e.host?.venue_name : e.host?.username) ?? "";
+const hostName = (e: EventRow) => (e.kind === "public" ? (e.host?.venue_name ?? "") : nameOf(e.host));
 
 /* ------------------------------------------------------------ public tab */
 
@@ -328,8 +328,8 @@ export function CommunityView() {
               </div>
             </div>
             <div className="card-foot">
-              <span className="avatar" style={{ background: e.host?.color ?? "#8FC1E3" }} title={e.host?.username ?? ""}>
-                {initials(e.host?.username)}
+              <span className="avatar" style={{ background: e.host?.color ?? "#8FC1E3" }} title={nameOf(e.host)}>
+                {initials(nameOf(e.host))}
               </span>
               <span className="muted">{isFull(e) ? "Full" : `${Math.min(e.going_count + 1, e.max_going ?? 0)} of ${e.max_going} going`}</span>
               <span className="spacer" />
