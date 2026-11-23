@@ -15,6 +15,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
   const [ticket, setTicket] = useState({ tier: 0, qty: 1 });
   const [people, setPeople] = useState<Attendee[]>([]);
   const [busy, setBusy] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!e || e.kind !== "community") return;
@@ -185,12 +186,18 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
         })),
     ];
     const seedOthers = e.going_count - people.filter((p) => p.user_id !== e.host_id).length;
+    // Faces past the first six, plus people counted but not listed (demo data).
+    const hiddenCount = Math.max(0, list.length - 7) + Math.max(0, seedOthers);
     section = (
       <div className="dsec">
-        <h4>
-          Who’s going · {goingText(e).replace(" going", "")}
-        </h4>
-        {list.map((p, i) => (
+        <button className="going-head" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
+          <h4>Who’s going · {goingText(e).replace(" going", "")}</h4>
+          <span className={`chev${showAll ? " up" : ""}`} aria-hidden>
+            <Ic name="back" size={16} width={2.4} />
+          </span>
+        </button>
+        {/* The host is always shown; the rest fold into a row of faces. */}
+        {(showAll ? list : list.slice(0, 1)).map((p, i) => (
           <div key={i} className="person">
             <span className="avatar" style={{ width: 36, height: 36, background: p.role === "me" ? "var(--accent)" : p.color }}>
               {p.role === "me" ? "ME" : initials(p.name)}
@@ -202,7 +209,17 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
             {i === 0 ? <span className="host-pill">Host</span> : null}
           </div>
         ))}
-        {seedOthers > 0 && <div className="hint">and {seedOthers} more</div>}
+        {!showAll && (list.length > 1 || hiddenCount > 0) && (
+          <button className="faces" onClick={() => setShowAll(true)} aria-label="Show everyone going">
+            {list.slice(1, 7).map((p, i) => (
+              <span key={i} className="avatar" style={{ background: p.role === "me" ? "var(--accent)" : p.color }}>
+                {p.role === "me" ? "ME" : initials(p.name)}
+              </span>
+            ))}
+            {hiddenCount > 0 && <span className="faces-more">+{hiddenCount}</span>}
+          </button>
+        )}
+        {showAll && seedOthers > 0 && <div className="hint">and {seedOthers} more</div>}
       </div>
     );
     const left = max === null ? "Unlimited" : max - count;

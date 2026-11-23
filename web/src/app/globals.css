@@ -453,3 +453,11 @@ html,body{overflow:hidden;height:100%;}
 @keyframes cal-next{from{opacity:0;transform:translateX(28px);}to{opacity:1;transform:none;}}
 @keyframes cal-prev{from{opacity:0;transform:translateX(-28px);}to{opacity:1;transform:none;}}
 @media (prefers-reduced-motion:reduce){.cal-slide-next,.cal-slide-prev{animation:none;}}
+
+/* Who's going: folded to the host and a row of faces */
+.going-head{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;}
+.chev{display:flex;color:var(--paper-dim);transform:rotate(-90deg);transition:transform .2s;}
+.chev.up{transform:rotate(90deg);}
+.faces{display:flex;align-items:center;padding:4px 0 2px 4px;}
+.faces .avatar{width:32px;height:32px;margin-left:-6px;box-shadow:0 0 0 2px var(--ink);font-size:10.5px;}
+.faces-more{margin-left:8px;font-size:12.5px;font-weight:700;color:var(--paper-dim);}
