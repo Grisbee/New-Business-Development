@@ -299,11 +299,22 @@ export function AppShell({ me }: { me: Profile }) {
     <AppCtx.Provider value={ctx}>
       <div className="screen" id="screen">
         <header className="topbar">
-          <div className="logo">
+          <button
+            className="logo"
+            aria-label="SideQuest home"
+            onClick={() => {
+              // Home: the first tab of the current mode, overlays closed.
+              setChat(null);
+              setDetail(null);
+              setSheet(null);
+              setFabMenu(false);
+              setTab(uni ? "teams" : "community");
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element -- small inline brand mark */}
             <img src="/icons/sidequest-icon.svg" alt="" />
             <span>Side<span className="brand">Quest</span></span>
-          </div>
+          </button>
           <span className="spacer" />
           <button className="mode" aria-pressed={uni} onClick={() => setMode(!uni)}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

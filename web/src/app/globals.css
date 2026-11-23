@@ -479,3 +479,4 @@ html,body{overflow:hidden;height:100%;}
 .dots{align-items:center;}
 .cal-legend{padding:0 6px 10px;flex-wrap:wrap;}
 .pin{font:inherit;font-weight:700;color:var(--accent);}
+button.logo{color:inherit;}
