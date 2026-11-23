@@ -389,3 +389,5 @@ html,body{overflow:hidden;height:100%;}
   .screen.auth-screen{display:flex;}
   .screen.auth-screen .view{padding-inline:16px;}
 }
+/* Headings, notes and links centred; form labels stay with their fields. */
+.auth h1,.auth h2,.auth-sub,.auth .ok,.auth .error{text-align:center;}
