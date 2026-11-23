@@ -24,8 +24,19 @@ const need = (k) => {
   return process.env[k];
 };
 
+// DATABASE_URL is the pooler URI as Supabase shows it (with or without the
+// password); DATABASE_PASSWORD, when set, is used as the password, so it
+// never needs URL-encoding.
 async function db(fn) {
-  const client = new pg.Client({ connectionString: need("DATABASE_URL"), ssl: { rejectUnauthorized: false } });
+  const url = new URL(need("DATABASE_URL"));
+  const client = new pg.Client({
+    host: url.hostname,
+    port: Number(url.port || 5432),
+    database: url.pathname.slice(1) || "postgres",
+    user: decodeURIComponent(url.username),
+    password: process.env.DATABASE_PASSWORD || decodeURIComponent(url.password),
+    ssl: { rejectUnauthorized: false },
+  });
   await client.connect();
   try {
     return await fn(client);

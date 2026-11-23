@@ -377,3 +377,10 @@ svg{flex-shrink:0;}
 .field textarea{width:100%;background:var(--ink-2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;color:var(--paper);font-family:inherit;font-size:14px;resize:vertical;min-height:80px;}
 .promo{display:block;text-decoration:none;width:100%;}
 a.icon-btn{text-decoration:none;}
+/* Clip rather than hide: an overflow:hidden box can still be scrolled
+   sideways by focus, which slid the whole app left after closing a chat. */
+.screen{overflow:clip;}
+html,body{overflow:hidden;height:100%;}
+@media (min-width:1024px){
+  .screen .detail:not(.open),.screen .chat:not(.open){box-shadow:none;}
+}
