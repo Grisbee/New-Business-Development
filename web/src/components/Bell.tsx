@@ -38,6 +38,8 @@ function text(n: Note): { text: React.ReactNode; emoji: string } {
       return { emoji: "✅", text: <>You’re a verified venue now. List your first public event!</> };
     case "venue_rejected":
       return { emoji: "📝", text: <>Your venue request wasn’t approved. You can send a new one.</> };
+    case "event_updated":
+      return { emoji: "✏️", text: <>{who} changed the time or place of {ev}. Check the details</> };
     case "event_cancelled":
       return { emoji: "🚫", text: <>{who} cancelled {ev}</> };
     default:
