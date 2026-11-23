@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppShell";
 import { ChatButton } from "@/components/views/Lists";
 import { Ic } from "@/components/Icons";
-import { fmtLong, imageUrl, initials, to12h } from "@/lib/format";
+import { REPEAT_LABEL, goingText, fmtLong, fmtShort, imageUrl, initials, to12h } from "@/lib/format";
 import { nameOf, type PersonLite } from "@/lib/types";
 
 type Attendee = { user_id: string; status: string; person: PersonLite | null };
 
 export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
-  const { data, me, isGoing, isFull, toggleJoin, openChat, toast } = useApp();
+  const { data, me, isGoing, isFull, toggleJoin, openChat, toast, confirm } = useApp();
   const e = data.events.find((x) => x.id === id);
   const [ticket, setTicket] = useState({ tier: 0, qty: 1 });
   const [people, setPeople] = useState<Attendee[]>([]);
@@ -43,6 +43,13 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
 
   async function buy() {
     if (!e) return;
+    const t = e.tickets[ticket.tier];
+    const ok = await confirm({
+      title: "Book this ticket?",
+      body: `${ticket.qty} × ${t?.name} for “${e.title}”, NT$${((t?.price ?? 0) * ticket.qty).toLocaleString("en-US")} paid at the door.`,
+      ok: "Book",
+    });
+    if (!ok) return;
     setBusy(true);
     const { error } = await data.supabase.from("going").insert({ event_id: e.id, tier: ticket.tier, qty: ticket.qty });
     setBusy(false);
@@ -52,7 +59,9 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
   }
 
   async function remove() {
-    if (!e || !confirm("Delete this event? Its chat goes with it.")) return;
+    if (!e) return;
+    const ok = await confirm({ title: "Delete this event?", body: `“${e.title}” and its group chat will be gone for everyone.`, ok: "Delete", danger: true });
+    if (!ok) return;
     const { error } = await data.supabase.from("events").delete().eq("id", e.id);
     if (error) return toast(`Couldn’t delete: ${error.message}`);
     toast("Event deleted");
@@ -162,8 +171,8 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     }
   } else {
     const full = isFull(e);
-    const max = e.max_going ?? 0;
-    const count = Math.min(e.going_count + 1, max);
+    const max = e.max_going;
+    const count = max === null ? e.going_count + 1 : Math.min(e.going_count + 1, max);
     const list: { name: string; tag: string; color: string; role: "host" | "me" | "" }[] = [
       { name: nameOf(host), tag: host?.tag ?? "", color: host?.color ?? "#8FC1E3", role: host?.id === me.id ? "me" : "host" },
       ...people
@@ -179,7 +188,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     section = (
       <div className="dsec">
         <h4>
-          Who’s going · {count} of {max}
+          Who’s going · {goingText(e).replace(" going", "")}
         </h4>
         {list.map((p, i) => (
           <div key={i} className="person">
@@ -196,7 +205,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
         {seedOthers > 0 && <div className="hint">and {seedOthers} more</div>}
       </div>
     );
-    const left = max - count;
+    const left = max === null ? "Unlimited" : max - count;
     const waiting = mine?.status === "waitlist";
     bar = (
       <>
@@ -264,8 +273,11 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
                 <Ic name="clock" size={18} />
               </span>
               <span>
-                {fmtLong(e.starts_on)}
-                <small>{to12h(e.starts_at)}</small>
+                {fmtLong(e.next_on)}
+                <small>
+                  {to12h(e.starts_at)}
+                  {e.repeat !== "none" && ` · ${REPEAT_LABEL[e.repeat]}${e.repeat_until ? ` until ${fmtShort(e.repeat_until)}` : ""}`}
+                </small>
               </span>
             </div>
             <div className="info-row">

@@ -40,8 +40,15 @@ export type EventRow = {
   max_going: number | null;
   image: string | null;
   going_count: number;
+  repeat: Repeat;
+  repeat_until: string | null;
+  // The next date it happens on (today or later), or the last one once a
+  // series is over. Filled in on load; the lists use it instead of starts_on.
+  next_on: string;
   host: PersonLite | null;
 };
+
+export type Repeat = "none" | "weekly" | "biweekly" | "monthly";
 
 export type GoingRow = { event_id: string; status: "going" | "waitlist"; tier: number | null; qty: number; created_at: string };
 

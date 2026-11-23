@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { addDays, todayIso } from "@/lib/format";
+import { addDays, nextOccurrence, todayIso } from "@/lib/format";
 import type { ChatSummary, EventRow, GoingRow, Profile, Team, Thread, UniItem } from "@/lib/types";
 
 export const EVENT_SELECT =
-  "id, kind, thread_id, host_id, title, tag, starts_on, starts_at, place, description, price, tickets, max_going, image, going_count, host:profiles!events_host_id_fkey(id, username, display_name, color, tag, venue_name, role)";
+  "id, kind, thread_id, host_id, title, tag, starts_on, starts_at, place, description, price, tickets, max_going, image, going_count, repeat, repeat_until, host:profiles!events_host_id_fkey(id, username, display_name, color, tag, venue_name, role)";
 
 // Everything the main screens show, loaded once and refreshed after writes
 // and on realtime changes. Small app, so whole lists are fine.
@@ -22,15 +22,19 @@ export function useAppData(me: Profile) {
   const [error, setError] = useState<string | null>(null);
 
   const loadEvents = useCallback(async () => {
-    // From a month back, so the calendar can show the recent past too.
+    // From a month back, so the calendar can show the recent past too, plus
+    // every repeating event (it may have started long ago).
+    const today = todayIso();
     const { data, error } = await supabase
       .from("events")
       .select(EVENT_SELECT)
-      .gte("starts_on", addDays(todayIso(), -31))
+      .or(`starts_on.gte.${addDays(today, -31)},repeat.neq.none`)
       .order("starts_on")
       .order("starts_at");
     if (error) return setError(error.message);
-    setEvents((data ?? []) as unknown as EventRow[]);
+    setEvents(
+      ((data ?? []) as unknown as Omit<EventRow, "next_on">[]).map((e) => ({ ...e, next_on: nextOccurrence(e, today) }) as EventRow),
+    );
   }, [supabase]);
 
   const loadGoing = useCallback(async () => {

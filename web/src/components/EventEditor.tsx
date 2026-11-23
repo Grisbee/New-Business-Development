@@ -4,9 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Ic } from "@/components/Icons";
-import { TAGS } from "@/components/views/Lists";
+import { TAGS, tagForThread } from "@/components/views/Lists";
 import { todayIso } from "@/lib/format";
-import type { Profile, Ticket } from "@/lib/types";
+import type { Profile, Repeat, Ticket } from "@/lib/types";
 
 type ThreadLite = { id: string; name: string; tag: string; color: string; icon: string };
 
@@ -24,9 +24,11 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
   useEffect(() => () => void (preview && URL.revokeObjectURL(preview)), [preview]);
   const fileRef = useRef<HTMLInputElement>(null);
   const [tiers, setTiers] = useState<Ticket[]>([]);
+  const [repeat, setRepeat] = useState<Repeat>("none");
+  const [unlimited, setUnlimited] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const defaultTag = thread && TAGS.community.includes(thread.tag) ? thread.tag : pub ? TAGS.public[0] : "Outdoors";
+  const defaultTag = pub ? TAGS.public[0] : tagForThread(thread?.tag);
   const back = pub ? "/#public" : "/#community";
 
   async function save(ev: React.FormEvent<HTMLFormElement>) {
@@ -65,7 +67,9 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
         description: val("description") || null,
         price: pub && !cleanTiers.length ? Number(val("price") || 0) : 0,
         tickets: pub ? cleanTiers : [],
-        max_going: pub ? null : Math.max(2, Number(val("max") || 8)),
+        max_going: pub || unlimited ? null : Math.max(2, Number(val("max") || 8)),
+        repeat: pub ? "none" : repeat,
+        repeat_until: !pub && repeat !== "none" && val("until") ? val("until") : null,
         image,
       })
       .select("id")
@@ -145,7 +149,7 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
           <div className="row2">
             <label className="field">
               Tag
-              <select name="tag" defaultValue={defaultTag}>
+              <select name="tag" key={defaultTag} defaultValue={defaultTag}>
                 {(pub ? TAGS.public : TAGS.community).map((t) => (
                   <option key={t}>{t}</option>
                 ))}
@@ -157,24 +161,68 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
                 <input name="price" type="number" min={0} max={1000000} defaultValue={0} disabled={tiers.length > 0} />
               </label>
             ) : (
-              <label className="field">
+              <div className="field">
                 Spots
-                <input name="max" type="number" min={2} max={500} defaultValue={8} />
-              </label>
+                <div className="spots">
+                  <input name="max" type="number" min={2} max={500} defaultValue={8} disabled={unlimited} aria-label="Spots" />
+                  <label className="switch">
+                    <input type="checkbox" checked={unlimited} onChange={(e) => setUnlimited(e.target.checked)} />
+                    <span className="switch-track" aria-hidden />
+                    Unlimited
+                  </label>
+                </div>
+              </div>
             )}
           </div>
-          {!pub && threads.length > 0 && (
-            <label className="field">
-              Thread (optional)
-              <select value={threadId} onChange={(e) => setThreadId(e.target.value)}>
-                <option value="">None</option>
-                {threads.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
+          {!pub && (
+            <div className="field">
+              Repeats
+              <div className="panel-chips">
+                {(
+                  [
+                    ["none", "Just once"],
+                    ["weekly", "Every week"],
+                    ["biweekly", "Every 2 weeks"],
+                    ["monthly", "Every month"],
+                  ] as const
+                ).map(([k, l]) => (
+                  <button key={k} type="button" className={`chip${repeat === k ? " active" : ""}`} aria-pressed={repeat === k} onClick={() => setRepeat(k)}>
+                    {l}
+                  </button>
                 ))}
-              </select>
+              </div>
+            </div>
+          )}
+          {!pub && repeat !== "none" && (
+            <label className="field">
+              Until (optional)
+              <input name="until" type="date" min={today} />
             </label>
+          )}
+          {!pub && (
+            <div className="field">
+              Post in a thread
+              {threads.length === 0 ? (
+                <span className="hint">Follow a thread to post events in it; they show up in its chat and its Related events.</span>
+              ) : (
+                <div className="thread-pick">
+                  <button type="button" className={`pick${threadId === "" ? " sel" : ""}`} aria-pressed={threadId === ""} onClick={() => setThreadId("")}>
+                    <span className="thread-icon" style={{ background: "var(--ink-3)" }}>
+                      <Ic name="x" size={16} />
+                    </span>
+                    No thread
+                  </button>
+                  {threads.map((t) => (
+                    <button key={t.id} type="button" className={`pick${threadId === t.id ? " sel" : ""}`} aria-pressed={threadId === t.id} onClick={() => setThreadId(t.id)}>
+                      <span className="thread-icon" style={{ background: t.color }}>
+                        <Ic name={t.icon} size={16} />
+                      </span>
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
           {pub && (
             <div className="field">
@@ -201,7 +249,9 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
             <textarea name="description" maxLength={2000} placeholder="What should people know?" />
           </label>
           <span className="hint">
-            {pub ? "Shows up in Public events and the Calendar." : "Shows up in Community events and the Calendar, and in the thread’s chat if you pick one."}
+            {pub
+              ? "Shows up in Public events and the Calendar."
+              : `Shows up in Community events and the Calendar${repeat !== "none" ? " on every date" : ""}, and in the thread’s chat if you pick one.${repeat !== "none" ? " One group chat for the whole series." : ""}`}
           </span>
           {error && <p className="error">{error}</p>}
           <button className="btn primary lg" type="submit" disabled={busy}>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useApp } from "@/components/AppShell";
 import { ERow, lastMsgText } from "@/components/views/Lists";
 import { Ic } from "@/components/Icons";
-import { DAYS, MON, MONTHS, chatTime, dueIn, fmtShort, isoOf, parse, to12h } from "@/lib/format";
+import { DAYS, MON, MONTHS, chatTime, dueIn, fmtShort, isoOf, occurrences, parse, to12h } from "@/lib/format";
 import type { UniItem } from "@/lib/types";
 
 const KIND_LABEL = { deadline: "Deadline", exam: "Exam", other: "Other" } as const;
@@ -37,9 +37,12 @@ function MonthGrid({
 }) {
   const { today } = useApp();
   const [month, setMonth] = useState(() => `${selected.slice(0, 7)}-01`);
+  // Which way the month slides in.
+  const [dir, setDir] = useState<"next" | "prev" | null>(null);
   const m = parse(month);
   const shift = (n: number) => {
     const d = new Date(m.getFullYear(), m.getMonth() + n, 1);
+    setDir(n > 0 ? "next" : "prev");
     setMonth(isoOf(d));
   };
   return (
@@ -62,6 +65,8 @@ function MonthGrid({
             {d}
           </div>
         ))}
+      </div>
+      <div key={month} className={`cal-grid${dir ? ` cal-slide-${dir}` : ""}`}>
         {monthCells(month).map((c) => {
           const ds = dots(c.iso);
           return (
@@ -95,7 +100,8 @@ const dayHead = (iso: string) => {
 export function CalendarView() {
   const { data, ui, setUi, isGoing } = useApp();
   const sorted = data.events.slice().sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-  const dayEvents = sorted.filter((e) => e.starts_on === ui.calDay);
+  const on = (e: (typeof sorted)[number], iso: string) => occurrences(e, iso, iso).length > 0;
+  const dayEvents = sorted.filter((e) => on(e, ui.calDay));
   return (
     <>
       <div className="tab-head">
@@ -104,7 +110,7 @@ export function CalendarView() {
       <MonthGrid
         selected={ui.calDay}
         onSelect={(iso) => setUi((u) => ({ ...u, calDay: iso }))}
-        dots={(iso) => sorted.filter((e) => e.starts_on === iso).map((e) => ({ cls: `${e.kind}${isGoing(e.id) ? " going" : ""}` }))}
+        dots={(iso) => sorted.filter((e) => on(e, iso)).map((e) => ({ cls: `${e.kind}${isGoing(e.id) ? " going" : ""}` }))}
         legend={
           <>
             <span>

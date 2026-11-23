@@ -3,14 +3,23 @@
 import Link from "next/link";
 import { useApp, type UiState } from "@/components/AppShell";
 import { Ic } from "@/components/Icons";
-import { DOW, MON, chatTime, dm, fmtShort, imageUrl, initials, parse, presets, priceLabel, to12h } from "@/lib/format";
+import { DOW, MON, REPEAT_LABEL, goingText, chatTime, dm, fmtShort, imageUrl, initials, parse, presets, priceLabel, to12h } from "@/lib/format";
 import { nameOf, type ChatSummary, type EventRow, type Thread } from "@/lib/types";
 
+// Public: what venues run. Community: what people get together for.
+// Threads: what a community is about.
 export const TAGS = {
-  public: ["Clubs", "Live Music", "Festivals", "Bars", "Food"],
-  community: ["Sports", "Trips", "Outdoors", "Culture", "Language", "Games"],
-  threads: ["Outdoors", "Sports", "Music", "Nightlife", "Food", "Travel", "Culture", "Art", "Language", "Gaming", "Tech", "Wellness", "Pets"],
+  public: ["Clubs", "Live Music", "Bars", "Food", "Festivals", "Arts", "Workshops", "Markets", "Sports"],
+  community: ["Sports", "Outdoors", "Trips", "Food", "Nightlife", "Culture", "Language", "Games", "Study", "Other"],
+  threads: ["Outdoors", "Sports", "Music", "Nightlife", "Food", "Travel", "Culture", "Art", "Language", "Gaming", "Tech", "Study", "Wellness", "Pets", "Housing", "Volunteering"],
 };
+
+// The community tag an event gets by default when posted in a thread.
+export function tagForThread(threadTag: string | undefined): string {
+  if (!threadTag) return "Outdoors";
+  if (TAGS.community.includes(threadTag)) return threadTag;
+  return { Travel: "Trips", Gaming: "Games", Music: "Culture", Art: "Culture", Wellness: "Sports" }[threadTag] ?? "Other";
+}
 const PLACEHOLDER = { public: "Search events or venues", community: "Search events", threads: "Search communities" };
 type ListKey = keyof typeof TAGS;
 
@@ -230,7 +239,7 @@ export function ERow({ e, showDate = true }: { e: EventRow; showDate?: boolean }
       <Thumb e={e} cls="eimg" />
       <div className="body">
         <span className="w">
-          {showDate ? `${fmtShort(e.starts_on)} · ` : ""}
+          {showDate ? `${fmtShort(e.next_on)} · ` : ""}
           {to12h(e.starts_at)}
         </span>
         <span className="t">{e.title}</span>
@@ -244,8 +253,8 @@ export function ERow({ e, showDate = true }: { e: EventRow; showDate?: boolean }
   );
 }
 
-const upcoming = (events: EventRow[], today: string) => events.filter((e) => e.starts_on >= today);
-const byDate = (a: EventRow, b: EventRow) => a.starts_on.localeCompare(b.starts_on) || a.starts_at.localeCompare(b.starts_at);
+const upcoming = (events: EventRow[], today: string) => events.filter((e) => e.next_on >= today);
+const byDate = (a: EventRow, b: EventRow) => a.next_on.localeCompare(b.next_on) || a.starts_at.localeCompare(b.starts_at);
 const hostName = (e: EventRow) => (e.kind === "public" ? (e.host?.venue_name ?? "") : nameOf(e.host));
 
 /* ------------------------------------------------------------ public tab */
@@ -256,7 +265,7 @@ export function PublicView() {
     "public",
     upcoming(data.events, today).filter((e) => e.kind === "public"),
     (e) => [e.title, e.place, e.tag, hostName(e)].join(" "),
-    (e) => e.starts_on,
+    (e) => e.next_on,
   ).sort(byDate);
   return (
     <>
@@ -269,7 +278,7 @@ export function PublicView() {
         {items.map((e) => (
           <article key={e.id} className="card has-img" onClick={() => openDetail(e.id)}>
             <div className="banner" style={{ backgroundImage: `url(${imageUrl(e.image) ?? "/demo/p0.jpg"})` }}>
-              <Datebox iso={e.starts_on} />
+              <Datebox iso={e.next_on} />
             </div>
             <div className="card-top">
               <div className="card-main">
@@ -305,7 +314,7 @@ export function CommunityView() {
     "community",
     upcoming(data.events, today).filter((e) => e.kind === "community"),
     (e) => [e.title, e.place, e.tag, hostName(e)].join(" "),
-    (e) => e.starts_on,
+    (e) => e.next_on,
   ).sort(byDate);
   return (
     <>
@@ -321,7 +330,8 @@ export function CommunityView() {
               <Thumb e={e} cls="thumb" />
               <div className="card-main">
                 <div className="when">
-                  {fmtShort(e.starts_on)} · {to12h(e.starts_at)}
+                  {fmtShort(e.next_on)} · {to12h(e.starts_at)}
+                  {e.repeat !== "none" && ` · ${REPEAT_LABEL[e.repeat]}`}
                 </div>
                 <h3>{e.title}</h3>
                 <div className="sub">{e.place}</div>
@@ -331,7 +341,7 @@ export function CommunityView() {
               <span className="avatar" style={{ background: e.host?.color ?? "#8FC1E3" }} title={nameOf(e.host)}>
                 {initials(nameOf(e.host))}
               </span>
-              <span className="muted">{isFull(e) ? "Full" : `${Math.min(e.going_count + 1, e.max_going ?? 0)} of ${e.max_going} going`}</span>
+              <span className="muted">{isFull(e) ? "Full" : goingText(e)}</span>
               <span className="spacer" />
               <ActionButtons e={e} />
             </div>
@@ -473,8 +483,8 @@ export function MineView() {
   const mine = upcoming(data.events, today)
     .filter((e) => (isGoing(e.id) || data.going.get(e.id)?.status === "waitlist") && (f === "all" || e.kind === f))
     .sort(byDate);
-  const week = mine.filter((e) => e.starts_on <= weekEnd);
-  const later = mine.filter((e) => e.starts_on > weekEnd);
+  const week = mine.filter((e) => e.next_on <= weekEnd);
+  const later = mine.filter((e) => e.next_on > weekEnd);
   const empty = {
     all: <>You haven’t joined any events yet.</>,
     public: (

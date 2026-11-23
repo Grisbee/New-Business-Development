@@ -83,6 +83,37 @@ export function presets(today = todayIso()): [string, string][] {
   ];
 }
 
+// Dates a (possibly repeating) event happens on between two days, inclusive.
+export function occurrences(e: { starts_on: string; repeat: string; repeat_until: string | null }, from: string, to: string): string[] {
+  if (e.repeat === "none") return e.starts_on >= from && e.starts_on <= to ? [e.starts_on] : [];
+  const end = e.repeat_until && e.repeat_until < to ? e.repeat_until : to;
+  const out: string[] = [];
+  const start = parse(e.starts_on);
+  for (let i = 0; i < 600; i++) {
+    const d = new Date(start);
+    if (e.repeat === "monthly") d.setMonth(start.getMonth() + i);
+    else d.setDate(start.getDate() + i * (e.repeat === "weekly" ? 7 : 14));
+    const iso = isoOf(d);
+    if (iso > end) break;
+    if (iso >= from) out.push(iso);
+  }
+  return out;
+}
+
+// The next date on or after `today`; the first date if it never repeats.
+export function nextOccurrence(e: { starts_on: string; repeat: string; repeat_until: string | null }, today: string): string {
+  if (e.repeat === "none") return e.starts_on;
+  return occurrences(e, today, addDays(today, 400))[0] ?? e.repeat_until ?? e.starts_on;
+}
+
+// "6 of 10 going", or "6 going" with unlimited spots. The host counts.
+export function goingText(e: { going_count: number; max_going: number | null }) {
+  const n = e.going_count + 1;
+  return e.max_going === null ? `${n} going` : `${Math.min(n, e.max_going)} of ${e.max_going} going`;
+}
+
+export const REPEAT_LABEL: Record<string, string> = { weekly: "Every week", biweekly: "Every 2 weeks", monthly: "Every month" };
+
 export const USER_COLORS = ["#8FC1E3", "#E8A0BF", "#F0C987", "#B8D8A8", "#C9B6F2", "#F2A488", "#7FD1C1"];
 
 // "Paweł Śli" → "PŚ", "marco.it" → "MA".

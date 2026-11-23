@@ -40,6 +40,7 @@ export type UiState = {
 };
 
 type Ctx = {
+  confirm: (d: { title: string; body: string; ok: string; danger?: boolean }) => Promise<boolean>;
   me: Profile;
   data: AppData;
   ui: UiState;
@@ -85,6 +86,12 @@ export function AppShell({ me }: { me: Profile }) {
   // Overlays stack in the order they were opened (chat over detail or back).
   const [layers, setLayers] = useState({ detail: 4, chat: 5 });
   const [toastMsg, setToastMsg] = useState<{ text: string; n: number } | null>(null);
+  // "Are you coming?" before joining, "Leave this event?" before leaving.
+  const [dialog, setDialog] = useState<{ title: string; body: string; ok: string; danger?: boolean; resolve: (yes: boolean) => void } | null>(null);
+  const confirm = useCallback(
+    (d: { title: string; body: string; ok: string; danger?: boolean }) => new Promise<boolean>((resolve) => setDialog({ ...d, resolve })),
+    [],
+  );
   const viewRef = useRef<HTMLElement>(null);
 
   // The tab lives in the URL hash, as in the mockup, so reloads keep it.
@@ -100,13 +107,26 @@ export function AppShell({ me }: { me: Profile }) {
       setChat({ ref: { type: "thread", id: threadId }, tab: "chat" });
       history.replaceState(null, "", `/${window.location.hash}`);
     }
+    // The hash picks the tab; without one (the logo, "Back to the app") the
+    // last mode is kept, so University mode survives leaving the screen.
     const start = window.location.hash.slice(1) as Tab;
+    let savedUni = false;
+    try {
+      savedUni = localStorage.getItem("sq-uni") === "1";
+    } catch {}
     if ([...TABS, ...UNI_TABS].some((t) => t.id === start)) {
-       
       setTabState(start);
-      if (UNI_TABS.some((t) => t.id === start)) setUni(true);
+      setUni(UNI_TABS.some((t) => t.id === start));
+    } else if (savedUni) {
+      setTabState("teams");
+      setUni(true);
     }
   }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("sq-uni", uni ? "1" : "0");
+    } catch {}
+  }, [uni]);
 
   const setTab = useCallback((id: Tab) => {
     setTabState(id);
@@ -148,6 +168,20 @@ export function AppShell({ me }: { me: Profile }) {
     async (e: EventRow) => {
       const mine = data.going.get(e.id);
       if (e.host_id === me.id) return toast("You’re hosting this event");
+      const series = e.repeat !== "none" ? " It repeats, so this is for every date." : "";
+      const yes = await confirm(
+        mine
+          ? {
+              title: mine.status === "waitlist" ? "Leave the waitlist?" : "Leave this event?",
+              body: mine.status === "waitlist" ? `You’ll lose your place for “${e.title}”.` : `You’ll leave “${e.title}” and its group chat.${series}`,
+              ok: "Leave",
+              danger: true,
+            }
+          : isFull(e)
+            ? { title: "Join the waitlist?", body: `“${e.title}” is full. You’ll get a spot when someone leaves.`, ok: "Join waitlist" }
+            : { title: "Are you coming?", body: `You’ll join “${e.title}” and its group chat.${series}`, ok: "I’m in" },
+      );
+      if (!yes) return;
       if (mine) {
         const { error } = await data.supabase.from("going").delete().eq("event_id", e.id).eq("user_id", me.id);
         if (error) return toast(`Couldn’t leave: ${error.message}`);
@@ -159,7 +193,7 @@ export function AppShell({ me }: { me: Profile }) {
       }
       await Promise.all([data.loadGoing(), data.loadEvents(), data.loadChats()]);
     },
-    [data, me.id, toast],
+    [data, me.id, toast, confirm, isFull],
   );
 
   const toggleFollow = useCallback(
@@ -186,6 +220,7 @@ export function AppShell({ me }: { me: Profile }) {
   };
 
   const ctx: Ctx = {
+    confirm,
     me,
     data,
     ui,
@@ -211,10 +246,26 @@ export function AppShell({ me }: { me: Profile }) {
     } as Partial<Record<Tab, number>>;
   }, [data.chats]);
 
-  const fabShown = (tab === "public" && (me.role === "venue" || me.role === "admin")) || tab === "community" || tab === "ucal";
+  const isVenue = me.role === "venue" || me.role === "admin";
+  const fabShown = !uni || tab === "ucal";
+  // In the city the + opens a small menu; the editors are separate pages, so
+  // the + spins until the chosen one opens.
+  const [fabMenu, setFabMenu] = useState(false);
+  const [fabBusy, setFabBusy] = useState(false);
+  const fabItems = [
+    { href: "/new-event?kind=community", label: "Add community event", icon: "users" },
+    { href: "/new-thread", label: "Add thread", icon: "chat" },
+    ...(isVenue ? [{ href: "/new-event?kind=public", label: "Add public event", icon: "ticket" }] : []),
+  ];
   const onFab = () => {
-    if (tab === "ucal") setSheet({ kind: "cal", type: "exam" });
-    else router.push(`/new-event?kind=${tab === "public" ? "public" : "community"}`);
+    if (fabBusy) return;
+    if (tab === "ucal") return setSheet({ kind: "cal", type: "exam" });
+    setFabMenu((m) => !m);
+  };
+  const go = (href: string) => {
+    setFabMenu(false);
+    setFabBusy(true);
+    router.push(href);
   };
 
   const views: Record<Tab, React.ReactNode> = {
@@ -257,8 +308,26 @@ export function AppShell({ me }: { me: Profile }) {
           {data.error && <div className="empty">Something went wrong: {data.error}</div>}
         </main>
 
-        <button className="fab" aria-label="Create" hidden={!fabShown} onClick={onFab}>
-          <Ic name="plus" size={24} width={2.6} />
+        {fabMenu && <div className="fab-scrim" onClick={() => setFabMenu(false)} />}
+        <div className={`fab-menu${fabMenu ? " open" : ""}`} aria-hidden={!fabMenu}>
+          {fabItems.map((item, i) => (
+            <button key={item.href} tabIndex={fabMenu ? 0 : -1} style={{ transitionDelay: fabMenu ? `${40 + i * 40}ms` : "0ms" }} onClick={() => go(item.href)}>
+              <span className="fab-menu-ic">
+                <Ic name={item.icon} size={17} />
+              </span>
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <button
+          className={`fab${fabBusy ? " busy" : ""}${fabMenu ? " open" : ""}`}
+          aria-label="Create"
+          aria-expanded={tab === "ucal" ? undefined : fabMenu}
+          aria-busy={fabBusy}
+          hidden={!fabShown}
+          onClick={onFab}
+        >
+          {fabBusy ? <span className="spinner fab-spinner" aria-hidden /> : <Ic name="plus" size={24} width={2.6} />}
         </button>
 
         <nav className="nav" id="nav">
@@ -288,6 +357,43 @@ export function AppShell({ me }: { me: Profile }) {
           )}
         </section>
         <div id="sheet">{sheet && <SheetHost sheet={sheet} onClose={() => setSheet(null)} />}</div>
+        {dialog && (
+          <div
+            className="dialog-wrap"
+            onClick={(ev) => {
+              if (ev.target === ev.currentTarget) {
+                dialog.resolve(false);
+                setDialog(null);
+              }
+            }}
+          >
+            <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title">
+              <b id="dialog-title">{dialog.title}</b>
+              <p>{dialog.body}</p>
+              <div className="dialog-actions">
+                <button
+                  className="btn lg"
+                  onClick={() => {
+                    dialog.resolve(false);
+                    setDialog(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={`btn lg ${dialog.danger ? "danger" : "primary"}`}
+                  autoFocus
+                  onClick={() => {
+                    dialog.resolve(true);
+                    setDialog(null);
+                  }}
+                >
+                  {dialog.ok}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className={`toast${toastMsg ? " show" : ""}`} role="status">
           {toastMsg?.text}
         </div>

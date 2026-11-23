@@ -5,7 +5,7 @@ import { useApp } from "@/components/AppShell";
 import { ERow, Thumb } from "@/components/views/Lists";
 import { UniRow } from "@/components/views/Calendars";
 import { Ic } from "@/components/Icons";
-import { USER_COLORS, chatTime, dueIn, fmtShort, initials, to12h } from "@/lib/format";
+import { USER_COLORS, goingText, chatTime, dueIn, fmtShort, initials, to12h } from "@/lib/format";
 import { nameOf, type ChatRef, type FileInfo, type Message } from "@/lib/types";
 
 const MSG_SELECT = "id, thread_id, event_id, team_id, user_id, kind, body, ref_event, ref_item, file, created_at, author:profiles!messages_user_id_fkey(username, display_name, color)";
@@ -281,7 +281,7 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
         <div className="chat-title">
           <b>{e.title}</b>
           <span>
-            {fmtShort(e.starts_on)} · {to12h(e.starts_at)} · {e.kind === "community" ? e.going_count + 1 : e.going_count} going
+            {fmtShort(e.next_on)} · {to12h(e.starts_at)} · {e.kind === "community" ? e.going_count + 1 : e.going_count} going
           </span>
         </div>
       </>
@@ -423,13 +423,13 @@ function EventCard({ id }: { id: string }) {
         <div>
           <div className="evt">{e.title}</div>
           <div className="evw">
-            {fmtShort(e.starts_on)} · {to12h(e.starts_at)}
+            {fmtShort(e.next_on)} · {to12h(e.starts_at)}
           </div>
         </div>
       </div>
       <div className="evfoot">
         <span>
-          {Math.min(e.going_count + 1, e.max_going ?? 0)} of {e.max_going} going
+          {goingText(e)}
         </span>
         {on ? (
           <button
