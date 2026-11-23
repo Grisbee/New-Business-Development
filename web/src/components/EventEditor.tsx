@@ -8,6 +8,9 @@ import { TAGS, tagForThread } from "@/components/views/Lists";
 import { todayIso } from "@/lib/format";
 import type { Profile, Repeat, Ticket } from "@/lib/types";
 
+// The host counts as one of them.
+const SPOTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 40, 50, 75, 100];
+
 type ThreadLite = { id: string; name: string; tag: string; color: string; icon: string };
 
 // The new-event page: a cover photo preview on top, then the form. Public
@@ -164,7 +167,13 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
               <div className="field">
                 Spots
                 <div className="spots">
-                  <input name="max" type="number" min={2} max={500} defaultValue={8} disabled={unlimited} aria-label="Spots" />
+                  <select name="max" defaultValue={8} disabled={unlimited} aria-label="Spots">
+                    {SPOTS.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
                   <label className="switch">
                     <input type="checkbox" checked={unlimited} onChange={(e) => setUnlimited(e.target.checked)} />
                     <span className="switch-track" aria-hidden />
