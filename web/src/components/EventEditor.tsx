@@ -131,7 +131,7 @@ export function EventEditor({
             className={`cover${preview ? " has" : ""}`}
             style={
               preview || keepImage
-                ? { backgroundImage: `url(${preview ?? imageUrl(keepImage)})` }
+                ? { backgroundImage: `url("${preview ?? imageUrl(keepImage)}")` }
                 : thread
                   ? { background: thread.color }
                   : undefined

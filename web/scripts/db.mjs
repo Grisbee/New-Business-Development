@@ -113,6 +113,13 @@ async function seed() {
   names.delete("me");
   M.EVENTS.forEach((e) => e.host && e.hostTag && (tags[e.host] ??= e.hostTag));
 
+  // Seeding wipes @sidequest.test accounts and creator-less threads, which
+  // would also delete content imported from Sidequest.
+  const imported = await db((c) => c.query("select count(*)::int n from private.imported_accounts"));
+  if (imported.rows[0].n > 0) {
+    console.error("This database has imported Sidequest content; seeding would delete it. Stopping.");
+    process.exit(1);
+  }
   console.log("removing old demo data…");
   await db(async (c) => {
     await c.query("delete from auth.users where email like '%@sidequest.test'");

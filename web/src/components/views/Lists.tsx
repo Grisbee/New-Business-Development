@@ -335,7 +335,7 @@ export function PublicView() {
         {!items.length && (filtering("public") ? <NoResults /> : <div className="empty">No public events yet. Bars, clubs and venues list theirs here.</div>)}
         {items.map((e) => (
           <article key={e.id} className="card has-img" onClick={() => openDetail(e.id)}>
-            <div className="banner" style={{ backgroundImage: `url(${imageUrl(e.image) ?? "/demo/p0.jpg"})` }}>
+            <div className="banner" style={{ backgroundImage: `url("${imageUrl(e.image) ?? "/demo/p0.jpg"}")` }}>
               <Datebox iso={e.next_on} />
             </div>
             <div className="card-top">

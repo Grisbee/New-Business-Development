@@ -157,6 +157,7 @@ function TeamSheet({ onClose }: { onClose: () => void }) {
         : await data.supabase.rpc("join_team", { p_code: val("join") });
     setBusy(false);
     if (res.error) return toast(res.error.message);
+    if (!res.data) return toast("No team with that PIN");
     await Promise.all([data.loadTeams(), data.loadChats()]);
     toast(mode === "create" ? "Team created · share its PIN to invite people" : "You joined the team");
     onClose();

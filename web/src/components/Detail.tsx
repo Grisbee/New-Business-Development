@@ -287,7 +287,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     <>
       <div className="dscroll">
         {src ? (
-          <div className="hero" style={{ backgroundImage: `url(${src})` }}>
+          <div className="hero" style={{ backgroundImage: `url("${src}")` }}>
             <button className="hero-back" aria-label="Back" onClick={onClose}>
               <Ic name="back" size={22} width={2.2} />
             </button>
