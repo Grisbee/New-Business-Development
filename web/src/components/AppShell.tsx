@@ -380,8 +380,21 @@ export function AppShell({ me }: { me: Profile }) {
           ))}
         </nav>
 
-        {/* Desktop: the panel sits beside the list; a click outside closes it. */}
-        {detail && <div className="detail-scrim" style={{ zIndex: layers.detail - 1 }} onClick={() => setDetail(null)} />}
+        {/* Desktop: panels (event, chat) sit beside the list; a click outside
+            them closes them all. */}
+        {(detail || chat) && (
+          <div
+            className="detail-scrim"
+            style={{ zIndex: Math.min(detail ? layers.detail : 99, chat ? layers.chat : 99) - 1 }}
+            onClick={() => {
+              setDetail(null);
+              if (chat) {
+                setChat(null);
+                void data.loadChats();
+              }
+            }}
+          />
+        )}
         <section className={`detail${detail ? " open" : ""}`} aria-hidden={!detail} style={{ zIndex: layers.detail }}>
           {detail && <Detail id={detail} onClose={() => setDetail(null)} />}
         </section>

@@ -337,9 +337,17 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
           {e.host_id === me.id && e.join_mode === "approval" && <Requests eventId={e.id} />}
           {section}
           {(e.host_id === me.id || me.role === "admin") && (
-            <button className="btn" style={{ alignSelf: "flex-start" }} onClick={() => void remove()}>
-              Delete event
-            </button>
+            <div className="host-actions">
+              {e.host_id === me.id && (
+                <a className="btn" href={`/new-event?edit=${e.id}`}>
+                  <Ic name="pen" size={14} width={2.2} />
+                  Edit event
+                </a>
+              )}
+              <button className="btn danger-outline" onClick={() => void remove()}>
+                Delete event
+              </button>
+            </div>
           )}
         </div>
       </div>

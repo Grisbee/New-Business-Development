@@ -519,3 +519,6 @@ button.logo{color:inherit;}
 .note-body small{font-size:11.5px;color:var(--paper-faint);}
 .chat-btn{display:inline-flex;align-items:center;gap:6px;position:relative;}
 .chat-btn .badge{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;font-size:10px;}
+.host-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.host-actions .btn{display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+.btn.danger-outline{background:transparent;border:1px solid var(--deadline);color:var(--deadline);}

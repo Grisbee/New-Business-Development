@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Ic } from "@/components/Icons";
 import { TAGS, tagForThread } from "@/components/views/Lists";
 import { todayIso } from "@/lib/format";
-import type { Profile, Repeat, Ticket } from "@/lib/types";
+import type { EventRow, Profile, Repeat, Ticket } from "@/lib/types";
+import { imageUrl } from "@/lib/format";
 
 // The host counts as one of them.
 const SPOTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 20, 25, 30, 40, 50, 75, 100];
@@ -16,7 +17,26 @@ type ThreadLite = { id: string; name: string; tag: string; color: string; icon: 
 // The new-event page: a cover photo preview on top, then the form. Public
 // events (venues) get an entry price or ticket types; community events get
 // spots and an optional thread, where the event is also posted.
-export function EventEditor({ me, kind, threads, threadId: initialThread }: { me: Profile; kind: "public" | "community"; threads: ThreadLite[]; threadId: string | null }) {
+export type EditableEvent = Pick<
+  EventRow,
+  "id" | "title" | "tag" | "starts_on" | "starts_at" | "place" | "description" | "price" | "tickets" | "max_going" | "image" | "repeat" | "repeat_until" | "join_mode"
+>;
+
+// `initial` = editing that event; otherwise a new one.
+export function EventEditor({
+  me,
+  kind,
+  threads,
+  threadId: initialThread,
+  initial,
+}: {
+  me: Profile;
+  kind: "public" | "community";
+  threads: ThreadLite[];
+  threadId: string | null;
+  initial?: EditableEvent;
+}) {
+  const editing = !!initial;
   const supabase = useMemo(() => createClient(), []);
   const pub = kind === "public";
   const today = todayIso();
@@ -26,14 +46,16 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
   const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo]);
   useEffect(() => () => void (preview && URL.revokeObjectURL(preview)), [preview]);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [tiers, setTiers] = useState<Ticket[]>([]);
-  const [repeat, setRepeat] = useState<Repeat>("none");
-  const [unlimited, setUnlimited] = useState(false);
-  const [approval, setApproval] = useState(false);
+  const [tiers, setTiers] = useState<Ticket[]>(initial?.tickets ?? []);
+  const [repeat, setRepeat] = useState<Repeat>(initial?.repeat ?? "none");
+  const [unlimited, setUnlimited] = useState(!!initial && initial.max_going === null);
+  const [approval, setApproval] = useState(initial?.join_mode === "approval");
+  // Editing: the current photo until a new one is picked or it's removed.
+  const [keepImage, setKeepImage] = useState(initial?.image ?? null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const defaultTag = pub ? TAGS.public[0] : tagForThread(thread?.tag);
-  const back = pub ? "/#public" : "/#community";
+  const back = initial ? `/?event=${initial.id}${pub ? "#public" : "#community"}` : pub ? "/#public" : "/#community";
 
   async function save(ev: React.FormEvent<HTMLFormElement>) {
     ev.preventDefault();
@@ -46,7 +68,7 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
       setError(msg);
     };
 
-    let image: string | null = null;
+    let image: string | null = keepImage;
     if (photo) {
       if (photo.size > 8 * 1024 * 1024) return fail("Photos up to 8 MB.");
       const path = `${me.id}/${crypto.randomUUID()}.${(photo.name.split(".").pop() || "jpg").toLowerCase().slice(0, 4)}`;
@@ -58,11 +80,7 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
     const cleanTiers = tiers
       .filter((t) => t.name.trim())
       .map((t) => ({ name: t.name.trim(), note: t.note?.trim() || null, price: Math.max(0, Math.round(t.price)) }));
-    const { data: row, error } = await supabase
-      .from("events")
-      .insert({
-        kind,
-        thread_id: pub ? null : threadId || null,
+    const fields = {
         title: val("title"),
         tag: val("tag"),
         starts_on: val("date"),
@@ -76,7 +94,16 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
         join_mode: !pub && approval ? "approval" : "open",
         repeat_until: !pub && repeat !== "none" && val("until") ? val("until") : null,
         image,
-      })
+    };
+    if (initial) {
+      const { error } = await supabase.from("events").update(fields).eq("id", initial.id).select("id").single();
+      if (error) return fail(`Couldn’t save: ${error.message}`);
+      window.location.replace(`/?event=${initial.id}${pub ? "#public" : "#community"}`);
+      return;
+    }
+    const { data: row, error } = await supabase
+      .from("events")
+      .insert({ ...fields, kind, thread_id: pub ? null : threadId || null })
       .select("id")
       .single();
     if (error) return fail(`Couldn’t post: ${error.message}`);
@@ -95,23 +122,29 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
         <Link href={back} className="icon-btn" aria-label="Back">
           <Ic name="back" size={22} width={2.2} />
         </Link>
-        <b className="editor-title">New {pub ? "public" : "community"} event</b>
+        <b className="editor-title">{editing ? "Edit event" : `New ${pub ? "public" : "community"} event`}</b>
       </header>
       <main className="view">
         <form className="auth editor" onSubmit={save}>
           <button
             type="button"
             className={`cover${preview ? " has" : ""}`}
-            style={preview ? { backgroundImage: `url(${preview})` } : thread ? { background: thread.color } : undefined}
+            style={
+              preview || keepImage
+                ? { backgroundImage: `url(${preview ?? imageUrl(keepImage)})` }
+                : thread
+                  ? { background: thread.color }
+                  : undefined
+            }
             onClick={() => fileRef.current?.click()}
           >
-            {!preview && (
+            {!preview && !keepImage && (
               <span className="cover-hint">
                 <Ic name="camera" size={26} width={1.8} />
                 Add a cover photo
               </span>
             )}
-            {preview && <span className="cover-change">Change photo</span>}
+            {(preview || keepImage) && <span className="cover-change">Change photo</span>}
           </button>
           <input
             ref={fileRef}
@@ -123,8 +156,15 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
               if (file) setPhoto(file);
             }}
           />
-          {preview && (
-            <button type="button" className="link-btn" onClick={() => setPhoto(null)}>
+          {(preview || keepImage) && (
+            <button
+              type="button"
+              className="link-btn"
+              onClick={() => {
+                setPhoto(null);
+                setKeepImage(null);
+              }}
+            >
               Remove photo
             </button>
           )}
@@ -135,26 +175,26 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
 
           <label className="field">
             Title
-            <input name="title" required minLength={3} maxLength={80} autoFocus placeholder={pub ? "e.g. Jazz night with the house band" : "e.g. Night fishing at Tamsui pier"} />
+            <input name="title" required minLength={3} maxLength={80} autoFocus defaultValue={initial?.title} placeholder={pub ? "e.g. Jazz night with the house band" : "e.g. Night fishing at Tamsui pier"} />
           </label>
           <div className="row2">
             <label className="field">
               Date
-              <input name="date" type="date" required min={today} defaultValue={today} />
+              <input name="date" type="date" required min={editing ? undefined : today} defaultValue={initial?.starts_on ?? today} />
             </label>
             <label className="field">
               Time
-              <input name="time" type="time" required defaultValue={pub ? "20:00" : "18:00"} />
+              <input name="time" type="time" required defaultValue={initial?.starts_at.slice(0, 5) ?? (pub ? "20:00" : "18:00")} />
             </label>
           </div>
           <label className="field">
             Place
-            <input name="place" required minLength={2} maxLength={80} placeholder={pub ? "e.g. The Copper Room · Gongguan" : "e.g. Tamsui MRT exit 2"} />
+            <input name="place" required minLength={2} maxLength={80} defaultValue={initial?.place} placeholder={pub ? "e.g. The Copper Room · Gongguan" : "e.g. Tamsui MRT exit 2"} />
           </label>
           <div className="row2">
             <label className="field">
               Tag
-              <select name="tag" key={defaultTag} defaultValue={defaultTag}>
+              <select name="tag" key={defaultTag} defaultValue={initial?.tag ?? defaultTag}>
                 {(pub ? TAGS.public : TAGS.community).map((t) => (
                   <option key={t}>{t}</option>
                 ))}
@@ -163,13 +203,13 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
             {pub ? (
               <label className="field">
                 Entry (NT$, 0 = free)
-                <input name="price" type="number" min={0} max={1000000} defaultValue={0} disabled={tiers.length > 0} />
+                <input name="price" type="number" min={0} max={1000000} defaultValue={initial?.price ?? 0} disabled={tiers.length > 0} />
               </label>
             ) : (
               <div className="field">
                 Spots
                 <div className="spots">
-                  <select name="max" defaultValue={8} disabled={unlimited} aria-label="Spots">
+                  <select name="max" defaultValue={initial?.max_going ?? 8} disabled={unlimited} aria-label="Spots">
                     {SPOTS.map((n) => (
                       <option key={n} value={n}>
                         {n}
@@ -221,10 +261,10 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
           {!pub && repeat !== "none" && (
             <label className="field">
               Until (optional)
-              <input name="until" type="date" min={today} />
+              <input name="until" type="date" min={today} defaultValue={initial?.repeat_until ?? undefined} />
             </label>
           )}
-          {!pub && (
+          {!pub && !editing && (
             <div className="field">
               Post in a thread
               {threads.length === 0 ? (
@@ -271,7 +311,7 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
           )}
           <label className="field">
             Description (optional)
-            <textarea name="description" maxLength={2000} placeholder="What should people know?" />
+            <textarea name="description" maxLength={2000} placeholder="What should people know?" defaultValue={initial?.description ?? undefined} />
           </label>
           <span className="hint">
             {pub
@@ -281,7 +321,7 @@ export function EventEditor({ me, kind, threads, threadId: initialThread }: { me
           {error && <p className="error">{error}</p>}
           <button className="btn primary lg" type="submit" disabled={busy}>
             {busy && <span className="spinner" aria-hidden />}
-            {busy ? "Posting…" : "Post event"}
+            {busy ? (editing ? "Saving…" : "Posting…") : editing ? "Save changes" : "Post event"}
           </button>
         </form>
       </main>
