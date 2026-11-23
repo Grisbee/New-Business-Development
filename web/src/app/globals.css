@@ -564,3 +564,21 @@ a.create-row{text-decoration:none;}
    rows need room to scroll clear of the bottom nav and the + button. */
 .view>*{flex-shrink:0;}
 @media (max-width:1023px){.view>.list:last-child{padding-bottom:calc(170px + env(safe-area-inset-bottom,0px));}}
+
+/* Your events in the calendar: the star gets a white outline */
+.dot-star{width:11px;height:11px;stroke:#fff;stroke-width:2.4px;paint-order:stroke;overflow:visible;filter:drop-shadow(0 0 1px rgba(0,0,0,.35));}
+.day.sel .dot-star{stroke:var(--accent);}
+
+/* Every page can be nudged a little, even when it's short: content is at
+   least a bit taller than the view, and scrolling bounces. */
+.view{overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;}
+.view::after{content:"";display:block;flex-shrink:0;min-height:1px;}
+.view>.list:last-child{min-height:100%;}
+@media (max-width:1023px){.view{scroll-padding-bottom:120px;}}
+
+/* Phones: the + sits above the bottom nav, also when the nav is taller
+   (home-screen app: the system bar adds env(safe-area-inset-bottom)). */
+@media (max-width:1023px){
+  .fab{bottom:calc(100px + env(safe-area-inset-bottom,0px));}
+  .fab-menu{bottom:calc(172px + env(safe-area-inset-bottom,0px));}
+}
