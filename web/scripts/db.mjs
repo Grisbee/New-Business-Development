@@ -144,7 +144,7 @@ async function seed() {
       await c.query("update public.profiles set username = $2, tag = $3, role = $4, venue_name = $5, first_name = $6, last_short = $7 where id = $1", [
         ids[n],
         n,
-        n === "demo" ? "Exchange · NTUST" : (tags[n] ?? (venue ? "Venue" : "Student · Taipei")),
+        n === "demo" ? "Exchange student · NTUST" : (tags[n] ?? (venue ? "Venue" : "Student · Taipei")),
         venue ? "venue" : "user",
         venue ?? null,
         venue ? venue.slice(0, 30) : cap(p0),
