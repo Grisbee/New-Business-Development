@@ -134,11 +134,11 @@ export function CalendarView() {
           <>
             <span>
               <i className="kdot public" />
-              Public
+              Public events
             </span>
             <span>
               <i className="kdot community" />
-              Community
+              Activities
             </span>
             <span>
               <svg className="dot-star legend-star" viewBox="0 0 24 24" aria-hidden>

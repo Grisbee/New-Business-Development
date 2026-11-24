@@ -20,8 +20,8 @@ export type Tab = "public" | "community" | "threads" | "calendar" | "mine" | "te
 type ListKey = "public" | "community" | "threads";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: "community", label: "Community", icon: "users" },
-  { id: "public", label: "Public", icon: "ticket" },
+  { id: "community", label: "Activities", icon: "users" },
+  { id: "public", label: "Public events", icon: "ticket" },
   { id: "threads", label: "Sidequests", icon: "chat" },
   { id: "calendar", label: "Calendar", icon: "calendar" },
   { id: "mine", label: "My events", icon: "star" },
@@ -326,7 +326,7 @@ export function AppShell({ me }: { me: Profile }) {
         { key: "cal", label: "Add to calendar", icon: "calendar", sheet: { kind: "cal", type: "exam" } },
       ]
     : [
-        { key: "community", label: "Add community event", icon: "users", href: "/new-event?kind=community" },
+        { key: "community", label: "Add activity", icon: "users", href: "/new-event?kind=community" },
         { key: "thread", label: "Add sidequest", icon: "chat", href: "/new-thread" },
         ...(isVenue ? [{ key: "public", label: "Add public event", icon: "ticket", href: "/new-event?kind=public" }] : []),
       ];

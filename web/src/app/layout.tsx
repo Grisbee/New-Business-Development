@@ -8,7 +8,7 @@ const publicSans = Public_Sans({ subsets: ["latin"], weight: ["400", "500", "600
 
 export const metadata: Metadata = {
   title: "SideQuest",
-  description: "City events, community sidequests and university teams for students in Taipei.",
+  description: "City events, activities, sidequests and university teams for students in Taipei.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icons/sidequest-icon.svg", apple: "/icons/apple-touch-icon.png" },
 };

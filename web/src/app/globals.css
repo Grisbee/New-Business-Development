@@ -66,7 +66,7 @@ svg{flex-shrink:0;}
 .logo .brand{color:var(--brand);}
 .city{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--paper-dim);background:var(--ink-3);padding:4px 9px;border-radius:999px;display:flex;align-items:center;gap:4px;}
 .spacer{flex:1;}
-.mode{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:700;color:var(--paper-dim);}
+.mode{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:700;color:var(--paper-dim);white-space:nowrap;flex-shrink:0;}
 .mode[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
 .icon-btn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--paper-dim);position:relative;}
 

@@ -125,7 +125,7 @@ export function EventEditor({
         <Link href={back} className="icon-btn" aria-label="Back">
           <Ic name="back" size={22} width={2.2} />
         </Link>
-        <b className="editor-title">{editing ? "Edit event" : `New ${pub ? "public" : "community"} event`}</b>
+        <b className="editor-title">{editing ? "Edit event" : pub ? "New public event" : "New activity"}</b>
       </header>
       <main className="view">
         <form className="auth editor" onSubmit={save}>
@@ -173,7 +173,7 @@ export function EventEditor({
           )}
 
           <span className="auth-sub" style={{ textAlign: "left" }}>
-            {pub ? `Listed by ${me.venue_name ?? "your venue"}` : thread ? `Posted in ${thread.name}` : "Community event"}
+            {pub ? `Listed by ${me.venue_name ?? "your venue"}` : thread ? `Posted in ${thread.name}` : "Activity"}
           </span>
 
           <label className="field">
@@ -319,7 +319,7 @@ export function EventEditor({
           <span className="hint">
             {pub
               ? "Shows up in Public events and the Calendar."
-              : `Shows up in Community events and the Calendar${repeat !== "none" ? " on every date" : ""}, and in the sidequest’s chat if you pick one.${repeat !== "none" ? " One group chat for the whole series." : ""}`}
+              : `Shows up in Activities and the Calendar${repeat !== "none" ? " on every date" : ""}, and in the sidequest’s chat if you pick one.${repeat !== "none" ? " One group chat for the whole series." : ""}`}
           </span>
           {error && <p className="error">{error}</p>}
           <button className="btn primary lg" type="submit" disabled={busy}>

@@ -21,7 +21,7 @@ export function tagForThread(threadTag: string | undefined): string {
   if (TAGS.community.includes(threadTag)) return threadTag;
   return { Travel: "Trips", Gaming: "Games", Music: "Culture", Art: "Culture", Wellness: "Sports" }[threadTag] ?? "Other";
 }
-const PLACEHOLDER = { public: "Search events or venues", community: "Search events", threads: "Search sidequests" };
+const PLACEHOLDER = { public: "Search events or venues", community: "Search activities", threads: "Search sidequests" };
 type ListKey = keyof typeof TAGS;
 
 // Cards and rows open the event; this makes them reachable by keyboard
@@ -319,7 +319,7 @@ export function ERow({ e, showDate = true }: { e: EventRow; showDate?: boolean }
         <span className="t">{e.title}</span>
         <span className="kind">
           <i className={`kdot ${e.kind}`} />
-          {e.kind === "public" ? "Public" : "Community"} · {e.place}
+          {e.kind === "public" ? "Public" : "Activity"} · {e.place}
         </span>
       </div>
       <ActionButtons e={e} compact />
@@ -397,12 +397,12 @@ export function CommunityView() {
   return (
     <>
       <div className="tab-head">
-        <h1>Community events</h1>
-        <p className="tab-desc">Activities students set up themselves. Join one, or tap + to host your own.</p>
+        <h1>Activities</h1>
+        <p className="tab-desc">Meetups students set up themselves. Join one, or tap + to host your own.</p>
       </div>
       <Toolbar k="community" />
       <div className="list">
-        {!items.length && (filtering("community") ? <NoResults /> : <div className="empty">No community events yet. Tap <b>+</b> to start one.</div>)}
+        {!items.length && (filtering("community") ? <NoResults /> : <div className="empty">No activities yet. Tap <b>+</b> to start one.</div>)}
         {items.map((e) => (
           <article key={e.id} className="card" onClick={() => openDetail(e.id)} {...openable(() => openDetail(e.id), e.title)}>
             <div className="card-top">
@@ -573,7 +573,7 @@ export function ThreadsView() {
             <div className="empty">
               No activities yet.
               <br />
-              Join a community event and its group chat shows up here.
+              Join an activity and its group chat shows up here.
             </div>
           ) : (
             activities.map((e) => <ActivityChatRow key={e.id} e={e} />)

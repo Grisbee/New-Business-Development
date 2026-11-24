@@ -356,7 +356,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
         <div className="dbody">
           <div className="dhead">
             <span className="dtag">
-              {pub ? "Public event" : e.join_mode === "approval" ? "Private community event" : "Community event"} · {e.tag}
+              {pub ? "Public event" : e.join_mode === "approval" ? "Private activity" : "Activity"} · {e.tag}
             </span>
             <h2>{e.title}</h2>
           </div>
