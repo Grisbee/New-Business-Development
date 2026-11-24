@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useApp, type UiState } from "@/components/AppShell";
+import { Avatar } from "@/components/Avatar";
 import { Ic } from "@/components/Icons";
-import { DOW, MON, REPEAT_LABEL, goingText, chatTime, dm, fmtShort, imageUrl, initials, parse, presets, priceLabel, to12h } from "@/lib/format";
+import { DOW, MON, REPEAT_LABEL, goingText, chatTime, dm, fmtShort, imageUrl, parse, presets, priceLabel, to12h } from "@/lib/format";
 import { nameOf, type ChatSummary, type EventRow, type Thread } from "@/lib/types";
 
 // Public: what venues run. Community: what people get together for.
@@ -414,9 +415,7 @@ export function CommunityView() {
               </div>
             </div>
             <div className="card-foot">
-              <span className="avatar" style={{ background: e.host?.color ?? "#8FC1E3" }} title={nameOf(e.host)}>
-                {initials(nameOf(e.host))}
-              </span>
+              <Avatar name={nameOf(e.host)} color={e.host?.color ?? "#8FC1E3"} avatar={e.host?.avatar} title={nameOf(e.host)} />
               <span className="muted">{isFull(e) ? "Full" : goingText(e)}</span>
               <span className="spacer" />
               <ShareButton e={e} />

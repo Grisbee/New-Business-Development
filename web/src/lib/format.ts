@@ -131,6 +131,10 @@ export const initials = (name: string | null | undefined) => {
 };
 
 // Event photo: a demo key ("demo:p0") or a storage path in event-images.
+export function avatarUrl(avatar: string | null): string | null {
+  return avatar ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${avatar}` : null;
+}
+
 export function imageUrl(image: string | null): string | null {
   if (!image) return null;
   if (image.startsWith("demo:")) return `/demo/${image.slice(5)}.jpg`;

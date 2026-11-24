@@ -9,7 +9,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ e
   const supabase = await createClient();
   const { data: me } = await supabase
     .from("profiles")
-    .select("id, username, first_name, last_short, display_name, tag, university, color, role, venue_name")
+    .select("id, username, first_name, last_short, display_name, tag, university, color, avatar, role, venue_name")
     .eq("id", userId)
     .single();
   if (!me) redirect("/login");

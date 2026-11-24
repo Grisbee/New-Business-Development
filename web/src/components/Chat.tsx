@@ -4,13 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useApp } from "@/components/AppShell";
 import { ERow, Thumb, openable } from "@/components/views/Lists";
 import { UniRow } from "@/components/views/Calendars";
+import { Avatar } from "@/components/Avatar";
 import { Ic } from "@/components/Icons";
 import { resizeImage } from "@/lib/resizeImage";
 import { Missing } from "@/components/Missing";
-import { USER_COLORS, goingText, chatTime, dueIn, fmtShort, initials, to12h } from "@/lib/format";
+import { USER_COLORS, goingText, chatTime, dueIn, fmtShort, to12h } from "@/lib/format";
 import { nameOf, type ChatRef, type FileInfo, type Message } from "@/lib/types";
 
-const MSG_SELECT = "id, thread_id, event_id, team_id, user_id, kind, body, ref_event, ref_item, file, created_at, author:profiles!messages_user_id_fkey(username, display_name, color)";
+const MSG_SELECT = "id, thread_id, event_id, team_id, user_id, kind, body, ref_event, ref_item, file, created_at, author:profiles!messages_user_id_fkey(username, display_name, color, avatar)";
 
 const colorFor = (n: string) => USER_COLORS[[...n].reduce((a, c) => a + c.charCodeAt(0), 0) % USER_COLORS.length];
 const column = (t: ChatRef["type"]) => (t === "thread" ? "thread_id" : t === "event" ? "event_id" : "team_id");
@@ -512,9 +513,7 @@ function Bubbles({ msgs, photoUrls, hostId, onFile }: { msgs: Message[]; photoUr
             <DeadlineCard id={m.ref_item} />
           ) : null;
         const av = (
-          <span className="avatar" style={{ background: color }}>
-            {initials(name)}
-          </span>
+          <Avatar name={name} color={color} avatar={m.author?.avatar} />
         );
         return (
           <div key={m.id} style={{ display: "contents" }}>

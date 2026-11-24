@@ -3,11 +3,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Avatar } from "@/components/Avatar";
 import { Ic } from "@/components/Icons";
 import { useAppData, type AppData } from "@/lib/useAppData";
 import { createClient } from "@/lib/supabase/client";
 import { Bell } from "@/components/Bell";
-import { initials, todayIso } from "@/lib/format";
+import { todayIso } from "@/lib/format";
 import type { ChatRef, EventRow, Profile } from "@/lib/types";
 import { PublicView, CommunityView, ThreadsView, MineView } from "@/components/views/Lists";
 import { CalendarView, TeamsView, UniCalendarView } from "@/components/views/Calendars";
@@ -562,8 +563,8 @@ function ProfileMenu({ me }: { me: Profile }) {
   return (
     <div className="pmenu" ref={ref}>
       <button className="icon-btn" aria-label="Your account" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <span className="avatar" style={{ background: me.color, width: 28, height: 28, boxShadow: open ? "0 0 0 2px var(--accent)" : undefined }}>
-          {initials(me.display_name ?? me.username)}
+        <span className="avatar-ring" style={{ boxShadow: open ? "0 0 0 2px var(--accent)" : undefined }}>
+          <Avatar name={me.display_name ?? me.username ?? ""} color={me.color} avatar={me.avatar} size={28} />
         </span>
       </button>
       <div className={`pmenu-list${open ? " open" : ""}`} aria-hidden={!open}>

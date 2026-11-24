@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppShell";
 import { ShareButton } from "@/components/views/Lists";
+import { Avatar } from "@/components/Avatar";
 import { Ic } from "@/components/Icons";
-import { REPEAT_LABEL, goingText, fmtLong, fmtShort, imageUrl, initials, nextOccurrence, to12h, todayIso } from "@/lib/format";
+import { REPEAT_LABEL, goingText, fmtLong, fmtShort, imageUrl, nextOccurrence, to12h, todayIso } from "@/lib/format";
 import { nameOf, type EventRow, type PersonLite } from "@/lib/types";
 import { EVENT_SELECT } from "@/lib/useAppData";
 import { Missing } from "@/components/Missing";
@@ -50,7 +51,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     let cancelled = false;
     void data.supabase
       .from("going")
-      .select("user_id, status, person:profiles!going_user_id_fkey(id, username, display_name, color, tag, venue_name, role)")
+      .select("user_id, status, person:profiles!going_user_id_fkey(id, username, display_name, color, avatar, tag, venue_name, role)")
       .eq("event_id", id)
       .eq("status", "going")
       .order("created_at")
@@ -216,14 +217,15 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     const full = isFull(e);
     const max = e.max_going;
     const count = max === null ? e.going_count + 1 : Math.min(e.going_count + 1, max);
-    const list: { name: string; tag: string; color: string; role: "host" | "me" | "" }[] = [
-      { name: nameOf(host), tag: host?.tag ?? "", color: host?.color ?? "#8FC1E3", role: host?.id === me.id ? "me" : "host" },
+    const list: PersonItem[] = [
+      { name: nameOf(host), tag: host?.tag ?? "", color: host?.color ?? "#8FC1E3", avatar: host?.avatar ?? null, role: host?.id === me.id ? "me" : "host" },
       ...people
         .filter((p) => p.user_id !== e.host_id)
         .map((p) => ({
           name: p.user_id === me.id ? "You" : nameOf(p.person),
           tag: p.person?.tag ?? "",
           color: p.person?.color ?? "#8FC1E3",
+          avatar: p.person?.avatar ?? null,
           role: (p.user_id === me.id ? "me" : "") as "me" | "",
         })),
     ];
@@ -235,9 +237,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
         <button className="going-row" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)} aria-label={showAll ? "Hide who’s going" : "Show who’s going"}>
           <span className="faces">
             {list.slice(0, 3).map((p, i) => (
-              <span key={i} className="avatar" style={{ background: p.role === "me" ? "var(--accent)" : p.color }}>
-                {p.role === "me" ? "ME" : initials(p.name)}
-              </span>
+              <Avatar key={i} name={p.name} color={p.role === "me" ? "var(--accent)" : p.color} avatar={p.avatar} label={p.role === "me" ? "ME" : undefined} />
             ))}
             {list.length > 3 && <span className="faces-more">+{list.length - 3}</span>}
           </span>
@@ -300,9 +300,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
     </div>
   ) : (
     <div className="info-row">
-      <span className="avatar" style={{ width: 36, height: 36, background: host?.color ?? "#8FC1E3" }}>
-        {initials(nameOf(host))}
-      </span>
+      <Avatar name={nameOf(host)} color={host?.color ?? "#8FC1E3"} avatar={host?.avatar} size={36} />
       <span>
         {nameOf(host)}
         <small>Host{host?.tag ? ` · ${host.tag}` : ""}</small>
@@ -408,12 +406,12 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
   );
 }
 
-function Person({ p, host }: { p: { name: string; tag: string; color: string; role: string }; host?: boolean }) {
+type PersonItem = { name: string; tag: string; color: string; avatar: string | null; role: "host" | "me" | "" };
+
+function Person({ p, host }: { p: PersonItem; host?: boolean }) {
   return (
     <div className="person">
-      <span className="avatar" style={{ width: 36, height: 36, background: p.role === "me" ? "var(--accent)" : p.color }}>
-        {p.role === "me" ? "ME" : initials(p.name)}
-      </span>
+      <Avatar name={p.name} color={p.role === "me" ? "var(--accent)" : p.color} avatar={p.avatar} size={36} label={p.role === "me" ? "ME" : undefined} />
       <span className="n">
         {p.name}
         {p.tag ? <small>{p.tag}</small> : null}
@@ -434,7 +432,7 @@ function Requests({ eventId }: { eventId: string }) {
     let cancelled = false;
     void data.supabase
       .from("going")
-      .select("user_id, person:profiles!going_user_id_fkey(id, username, display_name, color, tag, venue_name, role)")
+      .select("user_id, person:profiles!going_user_id_fkey(id, username, display_name, color, avatar, tag, venue_name, role)")
       .eq("event_id", eventId)
       .eq("status", "requested")
       .order("created_at")
@@ -461,9 +459,7 @@ function Requests({ eventId }: { eventId: string }) {
       {rows.length === 0 && <div className="hint" style={{ paddingTop: 8 }}>No requests right now.</div>}
       {rows.map((r) => (
         <div key={r.user_id} className="person">
-          <span className="avatar" style={{ width: 36, height: 36, background: r.person?.color ?? "#8FC1E3" }}>
-            {initials(nameOf(r.person))}
-          </span>
+          <Avatar name={nameOf(r.person)} color={r.person?.color ?? "#8FC1E3"} avatar={r.person?.avatar} size={36} />
           <span className="n">
             {nameOf(r.person)}
             {r.person?.tag ? <small>{r.person.tag}</small> : null}

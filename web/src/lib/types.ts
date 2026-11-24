@@ -12,11 +12,13 @@ export type Profile = {
   tag: string | null;
   university: string | null;
   color: string;
+  // Path in the avatars bucket, or null for initials.
+  avatar: string | null;
   role: Role;
   venue_name: string | null;
 };
 
-export type PersonLite = Pick<Profile, "id" | "username" | "display_name" | "color" | "tag" | "venue_name" | "role">;
+export type PersonLite = Pick<Profile, "id" | "username" | "display_name" | "color" | "avatar" | "tag" | "venue_name" | "role">;
 
 // How people are named in the app: "Paweł Śli", else the username.
 export const nameOf = (p: { display_name?: string | null; username?: string | null } | null | undefined) =>
@@ -103,7 +105,7 @@ export type Message = {
   ref_item: string | null;
   file: FileInfo | null;
   created_at: string;
-  author: { username: string | null; display_name: string | null; color: string } | null;
+  author: { username: string | null; display_name: string | null; color: string; avatar: string | null } | null;
 };
 
 export type ChatSummary = {

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { USER_COLORS } from "@/lib/format";
+import { squareImage } from "@/lib/resizeImage";
+import { Avatar } from "@/components/Avatar";
 
 export const UNIVERSITIES = ["NTU", "NTUST", "NTNU", "NCCU", "NTUT", "TMU", "NYCU", "Other"];
 const STATUSES = ["Exchange student", "Degree student", "Other"];
@@ -20,7 +22,7 @@ export function ProfileForm({
   then,
 }: {
   userId: string;
-  initial: { username: string | null; first_name: string | null; last_short: string | null; tag: string | null; university: string | null; color: string };
+  initial: { username: string | null; first_name: string | null; last_short: string | null; tag: string | null; university: string | null; color: string; avatar: string | null };
   submitLabel: string;
   then: string;
 }) {
@@ -35,6 +37,41 @@ export function ProfileForm({
   const [last, setLast] = useState(initial.last_short ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [avatar, setAvatar] = useState(initial.avatar);
+  const [photoBusy, setPhotoBusy] = useState(false);
+
+  // The photo is saved right away, apart from the rest of the form.
+  async function setPhoto(file: File | null) {
+    setError(null);
+    setPhotoBusy(true);
+    const supabase = createClient();
+    let path: string | null = null;
+    if (file) {
+      let img: File;
+      try {
+        img = await squareImage(file, 512);
+      } catch {
+        setPhotoBusy(false);
+        return setError("Couldn’t read that photo. Try a JPG or PNG.");
+      }
+      path = `${userId}/${Date.now()}.webp`;
+      const up = await supabase.storage.from("avatars").upload(path, img, { contentType: "image/webp" });
+      if (up.error) {
+        setPhotoBusy(false);
+        return setError(`Couldn’t upload the photo: ${up.error.message}`);
+      }
+    }
+    const { error } = await supabase.from("profiles").update({ avatar: path }).eq("id", userId).select("id").single();
+    if (error) {
+      if (path) await supabase.storage.from("avatars").remove([path]);
+      setPhotoBusy(false);
+      return setError(error.message);
+    }
+    // The old file isn't needed any more.
+    if (avatar) await supabase.storage.from("avatars").remove([avatar]);
+    setAvatar(path);
+    setPhotoBusy(false);
+  }
 
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -62,6 +99,31 @@ export function ProfileForm({
 
   return (
     <form onSubmit={save}>
+      <div className="avatar-edit">
+        <Avatar name={`${first} ${last}`.trim() || "?"} color={color} avatar={avatar} size={72} />
+        <div className="btns">
+          <label className={`btn${photoBusy ? " busy" : ""}`} aria-busy={photoBusy}>
+            {photoBusy && <span className="spinner" aria-hidden />}
+            {photoBusy ? "Uploading…" : avatar ? "Change photo" : "Add a photo"}
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              disabled={photoBusy}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (f) void setPhoto(f);
+              }}
+            />
+          </label>
+          {avatar && !photoBusy && (
+            <button type="button" className="btn" onClick={() => void setPhoto(null)}>
+              Remove
+            </button>
+          )}
+        </div>
+      </div>
       <div className="row2">
         <label className="field">
           First name
