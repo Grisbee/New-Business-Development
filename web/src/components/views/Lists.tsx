@@ -554,7 +554,7 @@ export function ThreadsView() {
       </div>
       <div className="seg">
         <button className={seg === "mine" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "mine" }))}>
-          Mine
+          Joined
           <span className="badge count">{followed.length}</span>
           {unread ? <span className="badge">{unread}</span> : null}
         </button>
