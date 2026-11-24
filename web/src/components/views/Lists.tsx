@@ -346,6 +346,7 @@ export function PublicView() {
     <>
       <div className="tab-head">
         <h1>Public events</h1>
+        <p className="tab-desc">Events at bars, clubs and venues around Taipei. Book tickets or just say you’re going.</p>
       </div>
       <Toolbar k="public" />
       <div className="list">
@@ -397,6 +398,7 @@ export function CommunityView() {
     <>
       <div className="tab-head">
         <h1>Community events</h1>
+        <p className="tab-desc">Activities students set up themselves. Join one, or tap + to host your own.</p>
       </div>
       <Toolbar k="community" />
       <div className="list">
@@ -548,6 +550,7 @@ export function ThreadsView() {
         <h1>
           Sidequests <small className="h1-sub">(community chats)</small>
         </h1>
+        <p className="tab-desc">Group chats around shared interests. Follow one to join in; Activities has your events’ chats.</p>
       </div>
       <div className="seg">
         <button className={seg === "mine" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "mine" }))}>
@@ -647,6 +650,7 @@ export function MineView() {
     <>
       <div className="tab-head">
         <h1>My events</h1>
+        <p className="tab-desc">Everything you joined or host, with its group chat and any join requests.</p>
       </div>
       <div className="seg">
         <button className={f === "joined" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, mineFilter: "joined" }))}>

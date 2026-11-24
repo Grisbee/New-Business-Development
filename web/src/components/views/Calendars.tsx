@@ -124,6 +124,7 @@ export function CalendarView() {
     <>
       <div className="tab-head">
         <h1>Calendar</h1>
+        <p className="tab-desc">Every event by day. Stars mark the ones you’re going to.</p>
       </div>
       <MonthGrid
         selected={ui.calDay}
@@ -197,6 +198,7 @@ export function TeamsView() {
     <>
       <div className="tab-head">
         <h1>Teams</h1>
+        <p className="tab-desc">Group chats for course projects and study groups, with shared files and deadlines.</p>
       </div>
       <div className="list rows" style={{ paddingTop: 10 }}>
         <button className="create-row" onClick={() => openSheet({ kind: "team" })}>
@@ -247,6 +249,7 @@ export function UniCalendarView() {
     <>
       <div className="tab-head">
         <h1>Calendar</h1>
+        <p className="tab-desc">Your exams and deadlines, plus your teams’ deadlines. Only you see your own entries.</p>
       </div>
       <MonthGrid
         selected={ui.uniDay}
