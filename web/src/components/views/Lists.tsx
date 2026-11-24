@@ -512,11 +512,11 @@ export function ThreadsView() {
   return (
     <>
       <div className="tab-head">
-        <h1>Threads</h1>
+        <h1>Sidequests</h1>
       </div>
       <div className="seg">
         <button className={seg === "mine" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "mine" }))}>
-          My threads
+          My sidequests
           <span className="badge count">{followed.length}</span>
           {unread ? <span className="badge">{unread}</span> : null}
         </button>

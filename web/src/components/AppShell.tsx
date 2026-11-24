@@ -21,7 +21,7 @@ type ListKey = "public" | "community" | "threads";
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "community", label: "Community", icon: "users" },
   { id: "public", label: "Public", icon: "ticket" },
-  { id: "threads", label: "Threads", icon: "chat" },
+  { id: "threads", label: "Sidequests", icon: "chat" },
   { id: "calendar", label: "Calendar", icon: "calendar" },
   { id: "mine", label: "My events", icon: "star" },
 ];
@@ -265,7 +265,7 @@ export function AppShell({ me }: { me: Profile }) {
           ? await data.supabase.from("follows").delete().eq("thread_id", threadId).eq("user_id", me.id)
           : await data.supabase.from("follows").insert({ thread_id: threadId });
         if (error) return toast(`Couldn’t update: ${error.message}`);
-        toast(t.followed ? `Unfollowed ${t.name}` : "Added to My threads");
+        toast(t.followed ? `Unfollowed ${t.name}` : "Added to My sidequests");
         await Promise.all([data.loadThreads(), data.loadChats()]);
       } finally {
         busy(`follow:${threadId}`, false);
