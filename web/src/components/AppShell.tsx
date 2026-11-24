@@ -35,7 +35,7 @@ export type UiState = {
   panel: Record<ListKey, "tags" | "dates" | null>;
   q: Record<ListKey, string>;
   range: Record<"public" | "community", { from: string; to: string } | null>;
-  threadSeg: "mine" | "explore";
+  threadSeg: "mine" | "activities" | "explore";
   mineFilter: "joined" | "hosting";
   calDay: string;
   uniDay: string;
@@ -306,11 +306,12 @@ export function AppShell({ me }: { me: Profile }) {
     const sum = (kind: string, filter?: (id: string) => boolean) =>
       [...data.chats.values()].filter((c) => c.kind === kind && (!filter || filter(c.id))).reduce((a, c) => a + c.unread, 0);
     return {
-      threads: sum("thread"),
+      // Community events' chats are listed in Sidequests too (Activities).
+      threads: sum("thread") + sum("event", (id) => data.events.some((e) => e.id === id && e.kind === "community")),
       mine: sum("event") + [...data.requests.values()].reduce((a, n) => a + n, 0),
       teams: sum("team"),
     } as Partial<Record<Tab, number>>;
-  }, [data.chats, data.requests]);
+  }, [data.chats, data.requests, data.events]);
 
   const isVenue = me.role === "venue" || me.role === "admin";
   // In the city the + opens a small menu; the editors are separate pages, so

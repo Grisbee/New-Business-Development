@@ -495,6 +495,25 @@ function ThreadRow({ t, mode }: { t: Thread; mode: "mine" | "all" }) {
   );
 }
 
+// A community event's group chat, for Sidequests → Activities.
+function ActivityChatRow({ e }: { e: EventRow }) {
+  const { data, me, openChat } = useApp();
+  const c = data.chats.get(`event:${e.id}`);
+  return (
+    <button className="thread" onClick={() => openChat({ type: "event", id: e.id })}>
+      <Thumb e={e} cls="thread-icon" />
+      <span className="thread-body">
+        <span className="thread-name">{e.title}</span>
+        <span className="preview">{lastMsgText(c, me.id, data.events) ?? `${fmtShort(e.next_on)} · No messages yet. Say hi!`}</span>
+      </span>
+      <div className="side">
+        <span className="time">{chatTime(c?.last_at ?? null)}</span>
+        {c?.unread ? <span className="badge">{c.unread}</span> : <span style={{ height: 20 }} />}
+      </div>
+    </button>
+  );
+}
+
 export function ThreadsView() {
   const { data, ui, setUi } = useApp();
   const seg = ui.threadSeg;
@@ -509,6 +528,21 @@ export function ThreadsView() {
       return Number(!!cb?.unread) - Number(!!ca?.unread) || (cb?.last_at ?? "").localeCompare(ca?.last_at ?? "");
     });
 
+  // Community events whose chat I'm in (going or hosting): unread first,
+  // then the latest message, then the ones coming up soonest.
+  const activities = data.events
+    .filter((e) => e.kind === "community" && data.chats.has(`event:${e.id}`))
+    .sort((a, b) => {
+      const ca = data.chats.get(`event:${a.id}`);
+      const cb = data.chats.get(`event:${b.id}`);
+      return (
+        Number(!!cb?.unread) - Number(!!ca?.unread) ||
+        (cb?.last_at ?? "").localeCompare(ca?.last_at ?? "") ||
+        (a.next_on ?? "").localeCompare(b.next_on ?? "")
+      );
+    });
+  const activityUnread = activities.reduce((n, e) => n + (data.chats.get(`event:${e.id}`)?.unread ?? 0), 0);
+
   return (
     <>
       <div className="tab-head">
@@ -516,16 +550,32 @@ export function ThreadsView() {
       </div>
       <div className="seg">
         <button className={seg === "mine" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "mine" }))}>
-          My sidequests
+          Mine
           <span className="badge count">{followed.length}</span>
           {unread ? <span className="badge">{unread}</span> : null}
+        </button>
+        <button className={seg === "activities" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "activities" }))}>
+          Activities
+          {activityUnread ? <span className="badge">{activityUnread}</span> : <span className="badge count">{activities.length}</span>}
         </button>
         <button className={seg === "explore" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "explore" }))}>
           Explore
           <span className="badge count">{data.threads.length}</span>
         </button>
       </div>
-      {seg === "explore" ? (
+      {seg === "activities" ? (
+        <div className="list rows">
+          {activities.length === 0 ? (
+            <div className="empty">
+              No activities yet.
+              <br />
+              Join a community event and its group chat shows up here.
+            </div>
+          ) : (
+            activities.map((e) => <ActivityChatRow key={e.id} e={e} />)
+          )}
+        </div>
+      ) : seg === "explore" ? (
         <>
           <Toolbar k="threads" />
           <div className="list rows">

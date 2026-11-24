@@ -144,7 +144,7 @@ svg{flex-shrink:0;}
 
 /* segmented control */
 .seg{display:flex;margin:14px 18px 4px;padding:4px;border-radius:12px;background:var(--ink-2);}
-.seg button{flex:1;padding:8px 0;border-radius:9px;font-size:13px;font-weight:700;color:var(--paper-dim);display:flex;align-items:center;justify-content:center;gap:6px;}
+.seg button{flex:1;padding:8px 4px;border-radius:9px;font-size:13px;font-weight:700;color:var(--paper-dim);display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;}
 .seg button.active{background:var(--ink-3);color:var(--paper);}
 .section-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--paper-faint);text-transform:uppercase;padding-top:14px;}
 
