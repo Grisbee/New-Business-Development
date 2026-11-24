@@ -35,7 +35,7 @@ export function ThreadEditor({ initial }: { initial?: EditableThread }) {
         .single();
       if (error) {
         setBusy(false);
-        return setError(error.code === "23505" ? "A thread with that name already exists." : error.message);
+        return setError(error.code === "23505" ? "A sidequest with that name already exists." : error.message);
       }
       window.location.replace(`/?thread=${initial.id}#threads`);
       return;
@@ -54,7 +54,7 @@ export function ThreadEditor({ initial }: { initial?: EditableThread }) {
         <Link href={initial ? `/?thread=${initial.id}#threads` : "/#threads"} className="icon-btn" aria-label="Back">
           <Ic name="back" size={22} width={2.2} />
         </Link>
-        <b className="editor-title">{initial ? "Edit thread" : "New thread"}</b>
+        <b className="editor-title">{initial ? "Edit sidequest" : "New sidequest"}</b>
       </header>
       <main className="view">
         <form className="auth editor" onSubmit={save}>
@@ -63,7 +63,7 @@ export function ThreadEditor({ initial }: { initial?: EditableThread }) {
               <Ic name={icon} size={22} />
             </span>
             <span className="thread-body">
-              <span className="thread-name">{name.trim() || "Your thread"}</span>
+              <span className="thread-name">{name.trim() || "Your sidequest"}</span>
               <span className="preview">{tag} · 1 member</span>
             </span>
           </div>
@@ -111,7 +111,7 @@ export function ThreadEditor({ initial }: { initial?: EditableThread }) {
           {error && <p className="error">{error}</p>}
           <button className="btn primary lg" disabled={busy}>
             {busy && <span className="spinner" aria-hidden />}
-            {busy ? (initial ? "Saving…" : "Creating…") : initial ? "Save changes" : "Create thread"}
+            {busy ? (initial ? "Saving…" : "Creating…") : initial ? "Save changes" : "Create sidequest"}
           </button>
         </form>
       </main>

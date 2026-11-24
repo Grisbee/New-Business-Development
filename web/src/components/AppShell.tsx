@@ -325,7 +325,7 @@ export function AppShell({ me }: { me: Profile }) {
       ]
     : [
         { key: "community", label: "Add community event", icon: "users", href: "/new-event?kind=community" },
-        { key: "thread", label: "Add thread", icon: "chat", href: "/new-thread" },
+        { key: "thread", label: "Add sidequest", icon: "chat", href: "/new-thread" },
         ...(isVenue ? [{ key: "public", label: "Add public event", icon: "ticket", href: "/new-event?kind=public" }] : []),
       ];
   const onFab = () => {

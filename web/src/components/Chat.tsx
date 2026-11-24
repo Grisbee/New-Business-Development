@@ -218,7 +218,7 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
           <span>{t.members.toLocaleString("en-US")} members</span>
         </div>
         {(t.created_by === me.id || me.role === "admin") && (
-          <a className="icon-btn" href={`/new-thread?edit=${t.id}`} aria-label="Edit thread" title="Edit thread">
+          <a className="icon-btn" href={`/new-thread?edit=${t.id}`} aria-label="Edit sidequest" title="Edit sidequest">
             <Ic name="pen" size={18} />
           </a>
         )}
@@ -249,7 +249,7 @@ export function ChatPanel({ chatRef, initialTab, onClose }: { chatRef: ChatRef; 
           {t.followed && (
             <a className="create-row" href={`/new-event?kind=community&thread=${t.id}`}>
               <Ic name="plus" size={18} width={2.4} />
-              Create an event in this thread
+              Create an event in this sidequest
             </a>
           )}
           {related.length ? (

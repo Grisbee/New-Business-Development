@@ -3,7 +3,7 @@ import { ThreadEditor, type EditableThread } from "@/components/ThreadEditor";
 import { requireMe } from "@/lib/me";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata = { title: "Thread · SideQuest" };
+export const metadata = { title: "Sidequest · SideQuest" };
 
 export default async function NewThreadPage({ searchParams }: { searchParams: Promise<{ edit?: string }> }) {
   const me = await requireMe();

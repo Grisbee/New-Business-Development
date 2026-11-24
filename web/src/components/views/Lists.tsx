@@ -20,7 +20,7 @@ export function tagForThread(threadTag: string | undefined): string {
   if (TAGS.community.includes(threadTag)) return threadTag;
   return { Travel: "Trips", Gaming: "Games", Music: "Culture", Art: "Culture", Wellness: "Sports" }[threadTag] ?? "Other";
 }
-const PLACEHOLDER = { public: "Search events or venues", community: "Search events", threads: "Search communities" };
+const PLACEHOLDER = { public: "Search events or venues", community: "Search events", threads: "Search sidequests" };
 type ListKey = keyof typeof TAGS;
 
 // Cards and rows open the event; this makes them reachable by keyboard
@@ -531,7 +531,7 @@ export function ThreadsView() {
           <div className="list rows">
             <Link className="create-row" href="/new-thread">
               <Ic name="plus" size={18} width={2.4} />
-              Start a thread
+              Start a sidequest
             </Link>
             {explore.length ? explore.map((t) => <ThreadRow key={t.id} t={t} mode="all" />) : <NoResults />}
           </div>

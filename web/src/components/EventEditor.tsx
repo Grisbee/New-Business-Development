@@ -268,16 +268,16 @@ export function EventEditor({
           )}
           {!pub && !editing && (
             <div className="field">
-              Post in a thread
+              Post in a sidequest
               {threads.length === 0 ? (
-                <span className="hint">Follow a thread to post events in it; they show up in its chat and its Related events.</span>
+                <span className="hint">Follow a sidequest to post events in it; they show up in its chat and its Related events.</span>
               ) : (
                 <div className="thread-pick">
                   <button type="button" className={`pick${threadId === "" ? " sel" : ""}`} aria-pressed={threadId === ""} onClick={() => setThreadId("")}>
                     <span className="thread-icon" style={{ background: "var(--ink-3)" }}>
                       <Ic name="x" size={16} />
                     </span>
-                    No thread
+                    No sidequest
                   </button>
                   {threads.map((t) => (
                     <button key={t.id} type="button" className={`pick${threadId === t.id ? " sel" : ""}`} aria-pressed={threadId === t.id} onClick={() => setThreadId(t.id)}>
@@ -318,7 +318,7 @@ export function EventEditor({
           <span className="hint">
             {pub
               ? "Shows up in Public events and the Calendar."
-              : `Shows up in Community events and the Calendar${repeat !== "none" ? " on every date" : ""}, and in the thread’s chat if you pick one.${repeat !== "none" ? " One group chat for the whole series." : ""}`}
+              : `Shows up in Community events and the Calendar${repeat !== "none" ? " on every date" : ""}, and in the sidequest’s chat if you pick one.${repeat !== "none" ? " One group chat for the whole series." : ""}`}
           </span>
           {error && <p className="error">{error}</p>}
           <button className="btn primary lg" type="submit" disabled={busy}>

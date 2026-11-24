@@ -392,7 +392,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
                 </span>
                 <span>
                   {thread.name}
-                  <small>Created in this thread · open chat</small>
+                  <small>Created in this sidequest · open chat</small>
                 </span>
               </button>
             )}
