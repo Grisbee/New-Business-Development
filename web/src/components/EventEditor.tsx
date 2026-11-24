@@ -49,7 +49,8 @@ export function EventEditor({
   const fileRef = useRef<HTMLInputElement>(null);
   const [tiers, setTiers] = useState<Ticket[]>(initial?.tickets ?? []);
   const [repeat, setRepeat] = useState<Repeat>(initial?.repeat ?? "none");
-  const [unlimited, setUnlimited] = useState(!!initial && initial.max_going === null);
+  // New events start with unlimited spots; edits keep what was set.
+  const [unlimited, setUnlimited] = useState(!initial || initial.max_going === null);
   const [approval, setApproval] = useState(initial?.join_mode === "approval");
   // Editing: the current photo until a new one is picked or it's removed.
   const [keepImage, setKeepImage] = useState(initial?.image ?? null);
