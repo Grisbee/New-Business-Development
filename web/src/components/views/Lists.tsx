@@ -546,7 +546,9 @@ export function ThreadsView() {
   return (
     <>
       <div className="tab-head">
-        <h1>Sidequests</h1>
+        <h1>
+          Sidequests <small className="h1-sub">(community chats)</small>
+        </h1>
       </div>
       <div className="seg">
         <button className={seg === "mine" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "mine" }))}>

@@ -72,6 +72,7 @@ svg{flex-shrink:0;}
 
 .tab-head{padding:6px 18px 0;flex-shrink:0;}
 .tab-head h1{font-family:var(--display);font-weight:800;font-size:26px;margin:0;letter-spacing:-.01em;text-wrap:balance;}
+.tab-head h1 .h1-sub{font-family:var(--body);font-size:15px;font-weight:600;color:var(--paper-dim);letter-spacing:0;white-space:nowrap;}
 
 /* tags + sort toolbar */
 .toolbar{display:flex;gap:8px;padding:14px 18px 6px;align-items:center;}
