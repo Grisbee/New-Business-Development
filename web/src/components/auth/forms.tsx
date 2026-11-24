@@ -6,8 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { safeNext } from "@/lib/safeNext";
 
-// Supabase's messages are fine to show as they are ("Invalid login
-// credentials", "Token has expired or is invalid").
+// Supabase's messages are mostly fine to show as they are ("Invalid login
+// credentials"); the email limit one doesn't say what to do.
+function friendly(err: string) {
+  return /rate limit/i.test(err) ? "We’ve sent a lot of emails in the last hour. Please try again in a few minutes." : err;
+}
+
 function useSubmit() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -19,7 +23,7 @@ function useSubmit() {
     // keeps the spinner up. Forms that stay put clear it via `done`.
     if (err) {
       setBusy(false);
-      setError(err);
+      setError(friendly(err));
     }
   }
   return { error, busy, run, setError, done: () => setBusy(false) };
