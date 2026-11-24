@@ -76,7 +76,7 @@ export function LoginForm() {
             if (!error) setResent(true);
           }}
         >
-          {resent ? "Sent · check your inbox" : "Send the confirmation link again"}
+          {resent ? "Sent · check inbox and spam" : "Send the confirmation link again"}
         </button>
       )}
       <button className="btn primary lg" disabled={busy}>
@@ -149,7 +149,7 @@ export function CheckEmail() {
   return (
     <>
       <p className="auth-sub">
-        We sent a link to <b>{email || "your email"}</b>. Open it on this device to confirm your account. It can take a minute; check spam too.
+        We sent a link to <b>{email || "your email"}</b>. Open it on this device to confirm your account. It can take a minute. <b>Not there? Check your spam folder</b> and mark it “Not spam”.
       </p>
       {error && <p className="error">{error}</p>}
       {info && <p className="ok">{info}</p>}
@@ -162,7 +162,7 @@ export function CheckEmail() {
             setInfo(null);
             const { error } = await createClient().auth.resend({ type: "signup", email, options: { emailRedirectTo: callback("/onboarding") } });
             if (error) return error.message;
-            setInfo("Sent it again.");
+            setInfo("Sent it again. Check your spam folder too.");
             done();
           })
         }
@@ -183,7 +183,7 @@ export function ForgotForm() {
   if (sent)
     return (
       <>
-        <p className="ok">If there’s an account with that email, a reset link is on its way. Open it on this device.</p>
+        <p className="ok">If there’s an account with that email, a reset link is on its way. Open it on this device. <b>Not there? Check your spam folder.</b></p>
         <p className="auth-sub">
           <Link href="/login">Back to sign in</Link>
         </p>
