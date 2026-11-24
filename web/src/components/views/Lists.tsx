@@ -496,7 +496,7 @@ function ThreadRow({ t, mode }: { t: Thread; mode: "mine" | "all" }) {
   );
 }
 
-// A community event's group chat, for Sidequests → Activities.
+// A community event's group chat, for Sidequests → Activity chats.
 function ActivityChatRow({ e }: { e: EventRow }) {
   const { data, me, openChat } = useApp();
   const c = data.chats.get(`event:${e.id}`);
@@ -550,7 +550,7 @@ export function ThreadsView() {
         <h1>
           Sidequests <small className="h1-sub">(community chats)</small>
         </h1>
-        <p className="tab-desc">Group chats around shared interests. Follow one to join in; Activities has your events’ chats.</p>
+        <p className="tab-desc">Group chats around shared interests. Follow one to join in; Activity chats has your activities’ chats.</p>
       </div>
       <div className="seg">
         <button className={seg === "mine" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "mine" }))}>
@@ -559,7 +559,7 @@ export function ThreadsView() {
           {unread ? <span className="badge">{unread}</span> : null}
         </button>
         <button className={seg === "activities" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "activities" }))}>
-          Activities
+          Activity chats
           {activityUnread ? <span className="badge">{activityUnread}</span> : <span className="badge count">{activities.length}</span>}
         </button>
         <button className={seg === "explore" ? "active" : ""} onClick={() => setUi((u) => ({ ...u, threadSeg: "explore" }))}>
@@ -571,7 +571,7 @@ export function ThreadsView() {
         <div className="list rows">
           {activities.length === 0 ? (
             <div className="empty">
-              No activities yet.
+              No activity chats yet.
               <br />
               Join an activity and its group chat shows up here.
             </div>

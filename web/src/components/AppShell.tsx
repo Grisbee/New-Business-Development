@@ -307,7 +307,7 @@ export function AppShell({ me }: { me: Profile }) {
     const sum = (kind: string, filter?: (id: string) => boolean) =>
       [...data.chats.values()].filter((c) => c.kind === kind && (!filter || filter(c.id))).reduce((a, c) => a + c.unread, 0);
     return {
-      // Community events' chats are listed in Sidequests too (Activities).
+      // Community events' chats are listed in Sidequests too (Activity chats).
       threads: sum("thread") + sum("event", (id) => data.events.some((e) => e.id === id && e.kind === "community")),
       mine: sum("event") + [...data.requests.values()].reduce((a, n) => a + n, 0),
       teams: sum("team"),
