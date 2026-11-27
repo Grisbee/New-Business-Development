@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useApp, type UiState } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
 import { Ic } from "@/components/Icons";
@@ -157,6 +158,67 @@ function useFiltered<T extends { tag: string }>(k: ListKey, items: T[], hay: (x:
   const r = k === "threads" ? null : ui.range[k];
   return items.filter(
     (x) => (!tag || x.tag === tag) && (!q || hay(x).toLowerCase().includes(q)) && (!r || !date || (date(x) >= r.from && date(x) <= r.to)),
+  );
+}
+
+/* ------------------------------------------------------------- paging */
+
+const PAGE_SIZE = 15;
+
+// One page of a filtered list; a new search, tag or date range goes back to
+// page 1.
+function usePage<T>(k: "public" | "community", items: T[]) {
+  const { ui } = useApp();
+  const key = JSON.stringify([ui.q[k], ui.tag[k], ui.range[k]]);
+  const [st, setSt] = useState({ key, page: 1 });
+  const pages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const page = st.key === key ? Math.min(st.page, pages) : 1;
+  const go = (n: number) => {
+    setSt({ key, page: n });
+    document.querySelector(".view")?.scrollTo({ top: 0 });
+  };
+  return { shown: items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), page, pages, go, total: items.length };
+}
+
+// 1 … 4 5 6 … 12
+function pageNums(page: number, pages: number): (number | null)[] {
+  const keep = new Set([1, pages, page - 1, page, page + 1].filter((n) => n >= 1 && n <= pages));
+  const out: (number | null)[] = [];
+  [...keep].sort((a, b) => a - b).forEach((n, i, a) => {
+    if (i && n - a[i - 1] > 1) out.push(null);
+    out.push(n);
+  });
+  return out;
+}
+
+function Pager({ page, pages, go, total }: { page: number; pages: number; go: (n: number) => void; total: number }) {
+  if (pages < 2) return null;
+  const from = (page - 1) * PAGE_SIZE + 1;
+  return (
+    <nav className="pager" aria-label="Pages">
+      <div className="pager-row">
+        <button type="button" disabled={page === 1} onClick={() => go(page - 1)} aria-label="Previous page">
+          ‹
+        </button>
+        {pageNums(page, pages).map((n, i) =>
+          n === null ? (
+            <span key={`gap${i}`} className="pager-gap">
+              …
+            </span>
+          ) : (
+            <button type="button" key={n} className={n === page ? "on" : ""} aria-current={n === page ? "page" : undefined} onClick={() => go(n)}>
+              {n}
+            </button>
+          ),
+        )}
+        <button type="button" disabled={page === pages} onClick={() => go(page + 1)} aria-label="Next page">
+          ›
+        </button>
+      </div>
+      <div className="pager-info">
+        {from}–{Math.min(page * PAGE_SIZE, total)} of {total}
+      </div>
+    </nav>
   );
 }
 
@@ -342,6 +404,7 @@ export function PublicView() {
     (e) => [e.title, e.place, e.tag, hostName(e)].join(" "),
     (e) => e.next_on,
   ).sort(byDate);
+  const pg = usePage("public", items);
   return (
     <>
       <div className="tab-head">
@@ -351,7 +414,7 @@ export function PublicView() {
       <Toolbar k="public" />
       <div className="list">
         {!items.length && (filtering("public") ? <NoResults /> : <div className="empty">No public events yet. Bars, clubs and venues list theirs here.</div>)}
-        {items.map((e) => (
+        {pg.shown.map((e) => (
           <article key={e.id} className="card has-img" onClick={() => openDetail(e.id)} {...openable(() => openDetail(e.id), e.title)}>
             <div className="banner" style={{ backgroundImage: `url("${imageUrl(e.image) ?? "/demo/p0.jpg"}")` }}>
               <Datebox iso={e.next_on} />
@@ -373,6 +436,7 @@ export function PublicView() {
             </div>
           </article>
         ))}
+        <Pager {...pg} />
         {me.role === "user" && (
           <Link className="promo" href="/venue">
             Run a venue in Taipei? <b>List an event →</b>
@@ -394,6 +458,7 @@ export function CommunityView() {
     (e) => [e.title, e.place, e.tag, hostName(e)].join(" "),
     (e) => e.next_on,
   ).sort(byDate);
+  const pg = usePage("community", items);
   return (
     <>
       <div className="tab-head">
@@ -403,7 +468,7 @@ export function CommunityView() {
       <Toolbar k="community" />
       <div className="list">
         {!items.length && (filtering("community") ? <NoResults /> : <div className="empty">No activities yet. Tap <b>+</b> to start one.</div>)}
-        {items.map((e) => (
+        {pg.shown.map((e) => (
           <article key={e.id} className="card" onClick={() => openDetail(e.id)} {...openable(() => openDetail(e.id), e.title)}>
             <div className="card-top">
               <Thumb e={e} cls="thumb" />
@@ -425,6 +490,7 @@ export function CommunityView() {
             </div>
           </article>
         ))}
+        <Pager {...pg} />
       </div>
     </>
   );
