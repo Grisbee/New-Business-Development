@@ -365,7 +365,7 @@ export function PublicView() {
               </div>
             </div>
             <div className="card-foot">
-              <span className="price">{priceLabel(e.price || (e.tickets.length ? Math.min(...e.tickets.map((t) => t.price)) : 0))}</span>
+              <span className="price">{e.price_note ?? priceLabel(e.price || (e.tickets.length ? Math.min(...e.tickets.map((t) => t.price)) : 0))}</span>
               <span className="muted">· {e.going_count} going</span>
               <span className="spacer" />
               <ShareButton e={e} />

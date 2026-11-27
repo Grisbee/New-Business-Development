@@ -41,6 +41,11 @@ export type EventRow = {
   tickets: Ticket[];
   max_going: number | null;
   image: string | null;
+  // Events listed from an organiser's page: the link (tickets live there),
+  // the price as they give it, and the cover photo's licence credit.
+  source_url: string | null;
+  price_note: string | null;
+  image_credit: string | null;
   going_count: number;
   repeat: Repeat;
   repeat_until: string | null;

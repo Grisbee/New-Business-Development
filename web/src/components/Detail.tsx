@@ -115,7 +115,37 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
   let section: React.ReactNode = null;
   let bar: React.ReactNode = null;
 
-  if (pub) {
+  if (pub && e.source_url) {
+    // Listed from the organiser's page: tickets and details are there.
+    section = (
+      <div className="dsec">
+        <h4>Tickets & info</h4>
+        <div className="ticket-ok">
+          <Ic name="ticket" size={18} width={2.2} />
+          <span>
+            {e.price_note && <b>{e.price_note}. </b>}
+            Tickets and the latest details are on the organiser’s page. Tap <b>Going</b> to see who else is in.
+          </span>
+        </div>
+      </div>
+    );
+    bar = (
+      <>
+        <span className="total">
+          {e.price_note ?? ""}
+          <b>{e.going_count} going</b>
+        </span>
+        {chatBtn}
+        <a className="btn lg" href={e.source_url} target="_blank" rel="noopener noreferrer">
+          Tickets & info
+        </a>
+        <button className={`btn lg ${on ? "on" : "primary"}`} disabled={joining} aria-busy={joining} onClick={() => void toggleJoin(e)}>
+          {joining && <span className="spinner" aria-hidden />}
+          {joining ? (on ? "Leaving…" : "Joining…") : on ? "✓ Going" : "Going"}
+        </button>
+      </>
+    );
+  } else if (pub) {
     if (!e.tickets.length) {
       section = (
         <div className="dsec">
@@ -313,6 +343,7 @@ export function Detail({ id, onClose }: { id: string; onClose: () => void }) {
       <div className="dscroll">
         {src ? (
           <div className="hero" style={{ backgroundImage: `url("${src}")` }}>
+            {e.image_credit && <small className="hero-credit">Photo: {e.image_credit}</small>}
             <button className="hero-back" aria-label="Back" onClick={onClose}>
               <Ic name="back" size={22} width={2.2} />
             </button>
