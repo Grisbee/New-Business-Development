@@ -120,6 +120,9 @@ export function CalendarView() {
     return m;
   }, [data.events, ui.calDay]);
   const dayEvents = byDay.get(ui.calDay) ?? [];
+  // Activities first, then public events below a line.
+  const dayActivities = dayEvents.filter((e) => e.kind !== "public");
+  const dayPublic = dayEvents.filter((e) => e.kind === "public");
   return (
     <>
       <div className="tab-head">
@@ -152,7 +155,15 @@ export function CalendarView() {
       <div className="list" style={{ gap: 0 }}>
         <div className="dayhead">{dayHead(ui.calDay)}</div>
         {dayEvents.length ? (
-          dayEvents.map((e) => <ERow key={e.id} e={e} showDate={false} />)
+          <>
+            {dayActivities.map((e) => <ERow key={e.id} e={e} showDate={false} />)}
+            {dayActivities.length > 0 && dayPublic.length > 0 && (
+              <div className="day-split" role="separator">
+                <span>Public events</span>
+              </div>
+            )}
+            {dayPublic.map((e) => <ERow key={e.id} e={e} showDate={false} />)}
+          </>
         ) : (
           <div className="empty" style={{ padding: "24px 0" }}>
             Nothing planned this day yet.
