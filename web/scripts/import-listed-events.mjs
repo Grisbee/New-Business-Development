@@ -37,8 +37,8 @@ const FREE = /^(cc0|cc by(-sa)?( \d\.\d)?|public domain|pd)/i;
 
 async function curator() {
   const email = "picks@sidequest.app";
-  const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  let user = list.users.find((u) => u.email === email);
+  const { data: known } = await admin.from("profiles").select("id").eq("venue_name", "SideQuest Picks").maybeSingle();
+  let user = known ? { id: known.id } : null;
   if (!user) {
     const { data, error } = await admin.auth.admin.createUser({
       email,
@@ -107,6 +107,28 @@ async function upload(hostId, photo) {
 
 const venueName = (place) => place.split(",")[0].replace(/\(.*?\)/g, "").trim();
 
+// --refresh: give already listed events (by title prefix) a new photo from
+// `photo_query`, e.g. when Commons picked something unfitting.
+if (flag === "--refresh") {
+  const hostId = await curator();
+  for (const ev of events) {
+    const photo = await findPhoto(ev.photo_query);
+    if (!photo) {
+      console.log("no photo for", ev.photo_query);
+      continue;
+    }
+    const image = await upload(hostId, photo);
+    const { data, error } = await admin
+      .from("events")
+      .update({ image, image_credit: photo.credit })
+      .eq("host_id", hostId)
+      .like("title", `${ev.title}%`)
+      .select("title");
+    console.log(error?.message ?? `${data.length} × ${ev.title} → ${photo.page}`);
+  }
+  process.exit(0);
+}
+
 const hostId = dry ? "dry-run" : await curator();
 const { data: existing } = dry ? { data: [] } : await admin.from("events").select("title, starts_on").eq("host_id", hostId);
 const seen = new Set((existing ?? []).map((e) => `${e.title}|${e.starts_on}`));
@@ -116,7 +138,10 @@ for (const ev of events) {
   if (seen.has(key)) continue;
   seen.add(key);
   if (!TAGS.includes(ev.tag)) ev.tag = "Festivals";
-  const photo = (await findPhoto(`${venueName(ev.place)} Taipei`)) ?? (await findPhoto(TAG_QUERY[ev.tag]));
+  const photo =
+    (ev.photo_query && (await findPhoto(ev.photo_query))) ??
+    (await findPhoto(`${venueName(ev.place)} Taipei`)) ??
+    (await findPhoto(TAG_QUERY[ev.tag]));
   const note = ev.price_ntd === 0 ? "Free" : ev.price_ntd ? `From NT$${ev.price_ntd.toLocaleString("en-US")}` : "Prices on site";
   const until = ev.ends_on && ev.ends_on !== ev.starts_on ? ` Runs until ${new Date(ev.ends_on).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.` : "";
   const row = {
