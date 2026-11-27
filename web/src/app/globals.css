@@ -618,3 +618,13 @@ a.btn{text-decoration:none;}
 .day-split{display:flex;align-items:center;gap:10px;margin:10px 0 4px;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--paper-faint);}
 .day-split::before,.day-split::after{content:"";flex:1;height:1px;background:var(--line);}
 .day-split::before{flex:0 0 0;}
+.day-split:first-child,.dayhead + .day-split{margin-top:2px;}
+.etag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;line-height:1.5;}
+.etag.community{background:color-mix(in srgb,var(--community) 18%,transparent);color:var(--community);}
+.etag.public{background:color-mix(in srgb,var(--venue) 18%,transparent);color:var(--venue);}
+.cal-tags{display:flex;gap:8px;overflow-x:auto;padding:2px 18px 10px;scrollbar-width:none;}
+.cal-tags::-webkit-scrollbar{display:none;}
+.cal-tags .chip{flex-shrink:0;border:0;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;}
+.page-cards{display:flex;flex-direction:column;gap:12px;}
+.pager .pager-arrow{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;}
+.pager button:not(.pager-arrow){display:inline-flex;align-items:center;justify-content:center;}

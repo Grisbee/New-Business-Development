@@ -163,21 +163,31 @@ function useFiltered<T extends { tag: string }>(k: ListKey, items: T[], hay: (x:
 
 /* ------------------------------------------------------------- paging */
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 30;
 
 // One page of a filtered list; a new search, tag or date range goes back to
 // page 1.
 function usePage<T>(k: "public" | "community", items: T[]) {
   const { ui } = useApp();
   const key = JSON.stringify([ui.q[k], ui.tag[k], ui.range[k]]);
-  const [st, setSt] = useState({ key, page: 1 });
+  const [st, setSt] = useState<{ key: string; page: number; dir: "next" | "prev" | null }>({ key, page: 1, dir: null });
   const pages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
   const page = st.key === key ? Math.min(st.page, pages) : 1;
+  const dir = st.key === key ? st.dir : null;
   const go = (n: number) => {
-    setSt({ key, page: n });
+    setSt({ key, page: n, dir: n > page ? "next" : "prev" });
     document.querySelector(".view")?.scrollTo({ top: 0 });
   };
-  return { shown: items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), page, pages, go, total: items.length };
+  return { shown: items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), page, pages, go, total: items.length, dir };
+}
+
+// The current page's cards, sliding in from the side of the page we came from.
+function PageCards({ page, dir, children }: { page: number; dir: "next" | "prev" | null; children: React.ReactNode }) {
+  return (
+    <div key={page} className={`page-cards${dir ? ` cal-slide-${dir}` : ""}`}>
+      {children}
+    </div>
+  );
 }
 
 // 1 … 4 5 6 … 12
@@ -197,8 +207,10 @@ function Pager({ page, pages, go, total }: { page: number; pages: number; go: (n
   return (
     <nav className="pager" aria-label="Pages">
       <div className="pager-row">
-        <button type="button" disabled={page === 1} onClick={() => go(page - 1)} aria-label="Previous page">
-          ‹
+        <button type="button" className="pager-arrow" disabled={page === 1} onClick={() => go(page - 1)} aria-label="Previous page">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m15 5-7 7 7 7" />
+          </svg>
         </button>
         {pageNums(page, pages).map((n, i) =>
           n === null ? (
@@ -211,8 +223,10 @@ function Pager({ page, pages, go, total }: { page: number; pages: number; go: (n
             </button>
           ),
         )}
-        <button type="button" disabled={page === pages} onClick={() => go(page + 1)} aria-label="Next page">
-          ›
+        <button type="button" className="pager-arrow" disabled={page === pages} onClick={() => go(page + 1)} aria-label="Next page">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 5 7 7-7 7" />
+          </svg>
         </button>
       </div>
       <div className="pager-info">
@@ -368,7 +382,7 @@ export function ActionButtons({ e, compact }: { e: EventRow; compact?: boolean }
   );
 }
 
-export function ERow({ e, showDate = true }: { e: EventRow; showDate?: boolean }) {
+export function ERow({ e, showDate = true, showTag = false }: { e: EventRow; showDate?: boolean; showTag?: boolean }) {
   const { openDetail } = useApp();
   return (
     <div className="erow" onClick={() => openDetail(e.id)} {...openable(() => openDetail(e.id), e.title)}>
@@ -380,8 +394,15 @@ export function ERow({ e, showDate = true }: { e: EventRow; showDate?: boolean }
         </span>
         <span className="t">{e.title}</span>
         <span className="kind">
-          <i className={`kdot ${e.kind}`} />
-          {e.kind === "public" ? "Public" : "Activity"} · {e.place}
+          {showTag ? (
+            <span className={`etag ${e.kind}`}>{e.tag}</span>
+          ) : (
+            <>
+              <i className={`kdot ${e.kind}`} />
+              {e.kind === "public" ? "Public" : "Activity"}
+            </>
+          )}{" "}
+          · {e.place}
         </span>
       </div>
       <ActionButtons e={e} compact />
@@ -414,7 +435,8 @@ export function PublicView() {
       <Toolbar k="public" />
       <div className="list">
         {!items.length && (filtering("public") ? <NoResults /> : <div className="empty">No public events yet. Bars, clubs and venues list theirs here.</div>)}
-        {pg.shown.map((e) => (
+        <PageCards page={pg.page} dir={pg.dir}>
+          {pg.shown.map((e) => (
           <article key={e.id} className="card has-img" onClick={() => openDetail(e.id)} {...openable(() => openDetail(e.id), e.title)}>
             <div className="banner" style={{ backgroundImage: `url("${imageUrl(e.image) ?? "/demo/p0.jpg"}")` }}>
               <Datebox iso={e.next_on} />
@@ -436,6 +458,7 @@ export function PublicView() {
             </div>
           </article>
         ))}
+        </PageCards>
         <Pager {...pg} />
         {me.role === "user" && (
           <Link className="promo" href="/venue">
@@ -468,7 +491,8 @@ export function CommunityView() {
       <Toolbar k="community" />
       <div className="list">
         {!items.length && (filtering("community") ? <NoResults /> : <div className="empty">No activities yet. Tap <b>+</b> to start one.</div>)}
-        {pg.shown.map((e) => (
+        <PageCards page={pg.page} dir={pg.dir}>
+          {pg.shown.map((e) => (
           <article key={e.id} className="card" onClick={() => openDetail(e.id)} {...openable(() => openDetail(e.id), e.title)}>
             <div className="card-top">
               <Thumb e={e} cls="thumb" />
@@ -490,6 +514,7 @@ export function CommunityView() {
             </div>
           </article>
         ))}
+        </PageCards>
         <Pager {...pg} />
       </div>
     </>

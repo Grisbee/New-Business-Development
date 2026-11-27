@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useApp } from "@/components/AppShell";
-import { ERow, lastMsgText } from "@/components/views/Lists";
+import { ERow, TAGS, lastMsgText } from "@/components/views/Lists";
 import { Ic } from "@/components/Icons";
 import { DAYS, MON, MONTHS, addDays, chatTime, dueIn, fmtShort, isoOf, occurrences, parse, to12h } from "@/lib/format";
 import type { EventRow } from "@/lib/types";
@@ -107,6 +107,12 @@ const dayHead = (iso: string) => {
 
 export function CalendarView() {
   const { data, ui, setUi, isGoing } = useApp();
+  const [tag, setTag] = useState<string | null>(null);
+  // Tags that some event has, in the order the lists use.
+  const tags = useMemo(() => {
+    const have = new Set(data.events.map((e) => e.tag));
+    return [...new Set([...TAGS.community, ...TAGS.public])].filter((t) => have.has(t));
+  }, [data.events]);
   // Every event's dates within about a year of the selected day, by day,
   // computed once instead of per cell.
   const byDay = useMemo(() => {
@@ -114,11 +120,11 @@ export function CalendarView() {
     const to = addDays(ui.calDay, 400);
     const m = new Map<string, EventRow[]>();
     data.events
-      .slice()
+      .filter((e) => !tag || e.tag === tag)
       .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
       .forEach((e) => occurrences(e, from, to).forEach((d) => m.set(d, [...(m.get(d) ?? []), e])));
     return m;
-  }, [data.events, ui.calDay]);
+  }, [data.events, ui.calDay, tag]);
   const dayEvents = byDay.get(ui.calDay) ?? [];
   // Activities first, then public events below a line.
   const dayActivities = dayEvents.filter((e) => e.kind !== "public");
@@ -128,6 +134,13 @@ export function CalendarView() {
       <div className="tab-head">
         <h1>Calendar</h1>
         <p className="tab-desc">Every event by day. Stars mark the ones you’re going to.</p>
+      </div>
+      <div className="cal-tags" role="group" aria-label="Filter by tag">
+        {["All", ...tags].map((t) => (
+          <button key={t} type="button" className={`chip${(tag ?? "All") === t ? " active" : ""}`} onClick={() => setTag(t === "All" ? null : t)}>
+            {t}
+          </button>
+        ))}
       </div>
       <MonthGrid
         selected={ui.calDay}
@@ -156,13 +169,18 @@ export function CalendarView() {
         <div className="dayhead">{dayHead(ui.calDay)}</div>
         {dayEvents.length ? (
           <>
-            {dayActivities.map((e) => <ERow key={e.id} e={e} showDate={false} />)}
-            {dayActivities.length > 0 && dayPublic.length > 0 && (
-              <div className="day-split" role="separator">
+            {dayActivities.length > 0 && (
+              <div className="day-split">
+                <span>Activities</span>
+              </div>
+            )}
+            {dayActivities.map((e) => <ERow key={e.id} e={e} showDate={false} showTag />)}
+            {dayPublic.length > 0 && (
+              <div className="day-split">
                 <span>Public events</span>
               </div>
             )}
-            {dayPublic.map((e) => <ERow key={e.id} e={e} showDate={false} />)}
+            {dayPublic.map((e) => <ERow key={e.id} e={e} showDate={false} showTag />)}
           </>
         ) : (
           <div className="empty" style={{ padding: "24px 0" }}>
